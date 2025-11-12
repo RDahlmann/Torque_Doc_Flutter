@@ -45,7 +45,7 @@ Future<void> main() async {
     ),
     iosNotificationOptions: const IOSNotificationOptions(),
     foregroundTaskOptions: ForegroundTaskOptions(
-      eventAction: ForegroundTaskEventAction.repeat(2000),
+      eventAction: ForegroundTaskEventAction.repeat(500),
       autoRunOnBoot: false,
       autoRunOnMyPackageReplaced: false,
       allowWakeLock: true,

@@ -2,6 +2,14 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'dart:convert';
+
+import '../globals.dart';
+
+
+
+
+
 
 class BleForegroundTask extends TaskHandler {
   final List<BluetoothDevice> devices = [];
@@ -31,6 +39,73 @@ class BleForegroundTask extends TaskHandler {
 
     await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
     debugPrint("[BLE_TASK] Scan started for 5 seconds");
+  }
+  String _buffer = '';
+
+  void _parseBleMessage(String msg) {
+    debugPrint("[BLE_TASK] Parsed message: $msg");
+
+    // 🔹 Einfache Befehle ohne Parameter
+    if (msg == "laeuft") {
+      debugPrint("✅ BLE meldet: Läuft erkannt!");
+      // TODO: Später UI triggern
+      return;
+    }
+
+    if (msg == "fehler") {
+      debugPrint("⚠️ BLE meldet: Fehler erkannt!");
+      // TODO: Später Fehleranzeige
+      return;
+    }
+
+    // 🔹 Kalibrierungsnachricht
+    if (msg.startsWith("kalibriert")) {
+      try {
+        final parts = msg.split("&");
+        if (parts.length >= 4) {
+          pwm = int.tryParse(parts[1]);
+          referenzzeitkal = int.tryParse(parts[2]);
+          vorreferenzzeit = int.tryParse(parts[3]);
+          iskalibriert = true;
+          debugPrint("🔧 Kalibriert empfangen -> pwm=$pwm, ref=$referenzzeitkal, vorref=$vorreferenzzeit");
+        }
+      } catch (e) {
+        debugPrint("⚠️ Fehler beim Parsen von kalibriert: $e");
+      }
+      return;
+    }
+
+    // 🔹 Angezogen / Abgebrochen1 / Abgebrochen2
+    if (msg.endsWith("angezogen") ||
+        msg.endsWith("abgebrochen1") ||
+        msg.endsWith("abgebrochen2")) {
+      try {
+        final parts = msg.split("&");
+        if (parts.length >= 4) {
+          schraubennummer = int.tryParse(parts[0]);
+          druckmax = int.tryParse(parts[1]);
+          solldruck = int.tryParse(parts[2]);
+          final status = parts[3]; // angezogen / abgebrochen1 / abgebrochen2
+
+          switch (status) {
+            case "angezogen":
+              debugPrint("🟢 Schraube $schraubennummer angezogen (Druck=$druckmax / Soll=$solldruck)");
+              break;
+            case "abgebrochen1":
+              debugPrint("🟠 Schraube $schraubennummer abgebrochen1");
+              break;
+            case "abgebrochen2":
+              debugPrint("🔴 Schraube $schraubennummer abgebrochen2");
+              break;
+          }
+        }
+      } catch (e) {
+        debugPrint("⚠️ Fehler beim Parsen von Schraubenstatus: $e");
+      }
+      return;
+    }
+
+    debugPrint("❓ Unbekannte Nachricht: $msg");
   }
 
   @override
@@ -110,13 +185,25 @@ class BleForegroundTask extends TaskHandler {
               // Notifications aktivieren
               await writeCharacteristic!.setNotifyValue(true);
               writeCharacteristic!.value.listen((value) {
-                final received = utf8.decode(value);
-                debugPrint("[BLE_TASK] Received data: $received");
+                if (value.isEmpty) return;
 
-                FlutterForegroundTask.sendDataToMain({
-                  'event': 'receivedData',
-                  'data': received,
-                });
+                final received = utf8.decode(value);
+                debugPrint("[BLE_TASK] Raw data: $received");
+
+                // 🔹 Wir sammeln eventuell fragmentierte Nachrichten, falls sie in mehreren Paketen kommen
+                _buffer += received;
+
+                // 🔹 Prüfen, ob eine komplette Nachricht empfangen wurde
+                while (_buffer.contains('\$') && _buffer.contains('~')) {
+                  final start = _buffer.indexOf('\$');
+                  final end = _buffer.indexOf('~', start);
+                  if (end == -1) break; // Nachricht ist noch unvollständig
+
+                  final message = _buffer.substring(start + 1, end);
+                  _buffer = _buffer.substring(end + 1);
+
+                  _parseBleMessage(message.trim());
+                }
               });
 
               break;
