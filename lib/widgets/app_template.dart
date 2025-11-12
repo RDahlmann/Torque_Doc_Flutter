@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/ble_foreground_task.dart';
+import '../screens/bluetooth_screen.dart';
 
 class AppTemplate extends StatefulWidget {
   final Widget child;
@@ -28,24 +29,16 @@ class _AppTemplateState extends State<AppTemplate> {
 
     // Kommunikation mit dem Foreground Task Port initialisieren
     FlutterForegroundTask.initCommunicationPort();
-
     FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
-
-    // Optional: einmaligen Statuscheck direkt nach Init
-   ;
   }
 
   void _handleTaskData(dynamic data) {
     if (data['event'] == 'stateconnected' && !isConnected) {
       setState(() => isConnected = true);
-    }
-    else if (data['event'] == 'statedisconnected' && isConnected) {
+    } else if (data['event'] == 'statedisconnected' && isConnected) {
       setState(() => isConnected = false);
     }
   }
-
-
-
 
   @override
   void dispose() {
@@ -73,20 +66,30 @@ class _AppTemplateState extends State<AppTemplate> {
                   SizedBox(width: screenWidth * 0.02),
                   Expanded(
                     child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            size: statusFontSize * 1.4,
-                            color: isConnected ? Colors.green : Colors.red,
-                          ),
-                          SizedBox(width: screenWidth * 0.01),
-                          Text(
-                            isConnected ? "Verbunden" : "Nicht verbunden",
-                            style: TextStyle(fontSize: statusFontSize),
-                          ),
-                        ],
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BluetoothScreen(isInitialScreen: false),
+                            ),
+                          );
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.circle,
+                              size: statusFontSize * 1.4,
+                              color: isConnected ? Colors.green : Colors.red,
+                            ),
+                            SizedBox(width: screenWidth * 0.01),
+                            Text(
+                              isConnected ? "Verbunden" : "Nicht verbunden",
+                              style: TextStyle(fontSize: statusFontSize),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

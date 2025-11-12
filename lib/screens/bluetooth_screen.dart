@@ -13,11 +13,14 @@ class DeviceData {
 }
 
 class BluetoothScreen extends StatefulWidget {
-  const BluetoothScreen({super.key});
+  final bool isInitialScreen;
+
+  const BluetoothScreen({super.key, this.isInitialScreen = false});
 
   @override
   State<BluetoothScreen> createState() => _BluetoothScreenState();
 }
+
 
 class _BluetoothScreenState extends State<BluetoothScreen> {
   List<DeviceData> devicesList = [];
@@ -79,7 +82,6 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     setState(() => selectedDevice = device);
     debugPrint("[BLE_SCREEN] Selected device: ${device.name} (${device.id})");
 
-    // Verbindung über Foreground Task anstoßen
     FlutterForegroundTask.sendDataToTask({
       'event': 'connectDevice',
       'id': device.id,
@@ -109,7 +111,6 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             const SizedBox(height: 16),
             DropdownButton<DeviceData>(
               hint: const Text('Gerät auswählen'),
@@ -125,7 +126,17 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                 if (d != null) _selectDevice(d);
               },
             ),
-
+            const SizedBox(height: 16),
+            AppButtons.primaryText(
+              text: "Scan",
+              onPressed: () {
+                debugPrint("[BLE_SCREEN] Requesting new scan");
+                FlutterForegroundTask.sendDataToTask({
+                  'event': 'startScan',
+                });
+              },
+              verticalPadding: 16,
+            ),
             const SizedBox(height: 16),
             AppButtons.primaryText(
               text: "Sende \$SETP 150~",
@@ -135,9 +146,13 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
               verticalPadding: 16,
             ),
             AppButtons.primaryText(
-              text: "Zurück",
+              text: "Weiter",
               onPressed: () {
-                Navigator.pop(context); // Zurück zum vorherigen Screen
+                if (widget.isInitialScreen) {
+                  Navigator.pushReplacementNamed(context, '/home');
+                } else {
+                  Navigator.pop(context);
+                }
               },
               verticalPadding: 16,
             ),

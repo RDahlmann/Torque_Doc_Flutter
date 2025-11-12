@@ -64,6 +64,14 @@ class BleForegroundTask extends TaskHandler {
   @override
   void onReceiveData(dynamic data) async {
     debugPrint("[BLE_TASK] onReceiveData: $data");
+    if (data['event'] == 'startScan') {
+      debugPrint("[BLE_TASK] Starting scan...");
+
+      // Bestehende Liste leeren, optional
+      devices.clear();
+
+      FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+    }
 
     if (data['event'] == 'connectDevice') {
       final id = data['id'] as String?;

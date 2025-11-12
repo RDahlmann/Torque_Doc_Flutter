@@ -110,7 +110,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'TorqueDoc',
       debugShowCheckedModeBanner: false,
-      initialRoute: '/home',
+      initialRoute: '/bluetooth',
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -130,7 +130,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/pressure': (_) => pressurescreen(),
         '/settings': (_) => Settingsscreen(),
         '/tools': (_) => Toolsscreen(),
-        '/bluetooth': (_) => BluetoothScreen(),
+        '/bluetooth': (_) => const BluetoothScreen(isInitialScreen: true),
       },
       theme: ThemeData(
         primaryColor: AppColors.primary,
