@@ -1,0 +1,130 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../utils/ble_foreground_task.dart';
+
+class AppTemplate extends StatefulWidget {
+  final Widget child;
+  final bool hideSettingsIcon;
+
+  const AppTemplate({
+    required this.child,
+    this.hideSettingsIcon = false,
+    super.key,
+  });
+
+  @override
+  State<AppTemplate> createState() => _AppTemplateState();
+}
+
+class _AppTemplateState extends State<AppTemplate> {
+  StreamSubscription<dynamic>? _taskDataSubscription;
+  bool isConnected = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Kommunikation mit dem Foreground Task Port initialisieren
+    FlutterForegroundTask.initCommunicationPort();
+
+    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
+
+    // Optional: einmaligen Statuscheck direkt nach Init
+   ;
+  }
+
+  void _handleTaskData(dynamic data) {
+    if (data['event'] == 'stateconnected' && !isConnected) {
+      setState(() => isConnected = true);
+    }
+    else if (data['event'] == 'statedisconnected' && isConnected) {
+      setState(() => isConnected = false);
+    }
+  }
+
+
+
+
+  @override
+  void dispose() {
+    _taskDataSubscription?.cancel();
+    FlutterForegroundTask.removeTaskDataCallback(_handleTaskData);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final logoHeight = screenWidth * 0.06;
+    final iconSize = screenWidth * 0.07;
+    final statusFontSize = screenWidth * 0.035;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02, vertical: 4),
+              child: Row(
+                children: [
+                  Image.asset('assets/logosd.jpg', height: logoHeight),
+                  SizedBox(width: screenWidth * 0.02),
+                  Expanded(
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            size: statusFontSize * 1.4,
+                            color: isConnected ? Colors.green : Colors.red,
+                          ),
+                          SizedBox(width: screenWidth * 0.01),
+                          Text(
+                            isConnected ? "Verbunden" : "Nicht verbunden",
+                            style: TextStyle(fontSize: statusFontSize),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (!widget.hideSettingsIcon)
+                    IconButton(
+                      icon: Icon(Icons.settings, size: iconSize),
+                      onPressed: () => Navigator.pushNamed(context, '/settings'),
+                    )
+                  else
+                    SizedBox(width: iconSize + 16),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: widget.child,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: GestureDetector(
+                onTap: () async {
+                  final Uri url = Uri.parse(
+                      'https://www.stephandahlmann.com/de/index.php?cid=kontakt');
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Icon(Icons.email, color: Colors.black, size: 36),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
