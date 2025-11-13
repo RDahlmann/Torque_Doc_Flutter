@@ -8,7 +8,8 @@ import '../globals.dart';
 
 
 
-
+// 🔹 Liste für empfangene BLE-Werte
+List<Map<String, dynamic>> BLE_Werteliste = [];
 
 
 class BleForegroundTask extends TaskHandler {
@@ -48,13 +49,17 @@ class BleForegroundTask extends TaskHandler {
     // 🔹 Einfache Befehle ohne Parameter
     if (msg == "laeuft") {
       debugPrint("✅ BLE meldet: Läuft erkannt!");
-      // TODO: Später UI triggern
+      FlutterForegroundTask.sendDataToMain({
+        'event': 'laeuft',
+      });
       return;
     }
 
     if (msg == "fehler") {
       debugPrint("⚠️ BLE meldet: Fehler erkannt!");
-      // TODO: Später Fehleranzeige
+      FlutterForegroundTask.sendDataToMain({
+        'event': 'fehler',
+      });
       return;
     }
 
@@ -66,8 +71,13 @@ class BleForegroundTask extends TaskHandler {
           pwm = int.tryParse(parts[1]);
           referenzzeitkal = int.tryParse(parts[2]);
           vorreferenzzeit = int.tryParse(parts[3]);
-          iskalibriert = true;
           debugPrint("🔧 Kalibriert empfangen -> pwm=$pwm, ref=$referenzzeitkal, vorref=$vorreferenzzeit");
+          FlutterForegroundTask.sendDataToMain({
+            'event': 'kalibriert',
+            'pwm': pwm,
+            'referenzzeitkal': referenzzeitkal,
+            'vorreferenzzeit': vorreferenzzeit,
+          });
         }
       } catch (e) {
         debugPrint("⚠️ Fehler beim Parsen von kalibriert: $e");
@@ -87,17 +97,68 @@ class BleForegroundTask extends TaskHandler {
           solldruck = int.tryParse(parts[2]);
           final status = parts[3]; // angezogen / abgebrochen1 / abgebrochen2
 
+          String ergebnis = "";
+
           switch (status) {
             case "angezogen":
+              ergebnis = "iO";
               debugPrint("🟢 Schraube $schraubennummer angezogen (Druck=$druckmax / Soll=$solldruck)");
+              final eintrag = {
+                "Schraubennummer": schraubennummer,
+                "Druckmax": druckmax,
+                "Solldruck": solldruck,
+                "Ergebnis": ergebnis,
+
+              };
+              BLE_Werteliste.add(eintrag);
+              debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              FlutterForegroundTask.sendDataToMain({
+                'event': 'angezogen',
+                'Werteliste':BLE_Werteliste,
+              });
+              debugPrint("[BLE_TASK] angezogen verschickt");
               break;
             case "abgebrochen1":
+              ergebnis = "nIO";
               debugPrint("🟠 Schraube $schraubennummer abgebrochen1");
+              final eintrag = {
+                "Schraubennummer": schraubennummer,
+                "Druckmax": druckmax,
+                "Solldruck": solldruck,
+                "Ergebnis": ergebnis,
+              };
+              BLE_Werteliste.add(eintrag);
+              debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              FlutterForegroundTask.sendDataToMain({
+                'event': 'abgebrochen1',
+                'Werteliste':BLE_Werteliste,
+              });
+              debugPrint("[BLE_TASK] angezogen verschickt");
               break;
             case "abgebrochen2":
+              ergebnis = "nIO";
               debugPrint("🔴 Schraube $schraubennummer abgebrochen2");
+              final eintrag = {
+                "Schraubennummer": schraubennummer,
+                "Druckmax": druckmax,
+                "Solldruck": solldruck,
+                "Ergebnis": ergebnis,
+              };
+              BLE_Werteliste.add(eintrag);
+              debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              FlutterForegroundTask.sendDataToMain({
+                'event': 'abgebrochen2',
+                'Werteliste':BLE_Werteliste,
+              });
+              debugPrint("[BLE_TASK] angezogen verschickt");
               break;
           }
+
+          // 🔹 In Liste einfügen
+
+
+
+          debugPrint("📦 Aktuelle Länge BLE_Werteliste: ${BLE_Werteliste.length}");
         }
       } catch (e) {
         debugPrint("⚠️ Fehler beim Parsen von Schraubenstatus: $e");
@@ -183,28 +244,37 @@ class BleForegroundTask extends TaskHandler {
               debugPrint("[BLE_TASK] Write characteristic found: ${c.uuid}");
 
               // Notifications aktivieren
+              // Notifications aktivieren
               await writeCharacteristic!.setNotifyValue(true);
               writeCharacteristic!.value.listen((value) {
                 if (value.isEmpty) return;
 
+                // Empfangene Rohdaten in Buffer sammeln
                 final received = utf8.decode(value);
                 debugPrint("[BLE_TASK] Raw data: $received");
-
-                // 🔹 Wir sammeln eventuell fragmentierte Nachrichten, falls sie in mehreren Paketen kommen
                 _buffer += received;
 
-                // 🔹 Prüfen, ob eine komplette Nachricht empfangen wurde
+                // Prüfen, ob eine oder mehrere komplette Nachrichten vorliegen
                 while (_buffer.contains('\$') && _buffer.contains('~')) {
                   final start = _buffer.indexOf('\$');
                   final end = _buffer.indexOf('~', start);
-                  if (end == -1) break; // Nachricht ist noch unvollständig
+                  if (end == -1) break; // Nachricht noch unvollständig
 
-                  final message = _buffer.substring(start + 1, end);
+                  // Nachricht extrahieren, führendes $ und abschließendes ~ werden entfernt
+                  final message = _buffer.substring(start + 1, end).trim();
+                  final cleanMessage = message.startsWith(r'$') ? message.substring(1) : message;
+
+                  // Debug: Zeige die saubere Nachricht
+                  debugPrint("[BLE_TASK] Complete message parsed: '$message'");
+
+                  // Nachricht an Parser senden
+                  _parseBleMessage(cleanMessage);
+
+                  // Buffer kürzen
                   _buffer = _buffer.substring(end + 1);
-
-                  _parseBleMessage(message.trim());
                 }
               });
+
 
               break;
             }

@@ -282,7 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
               AppButtons.primaryText(
                 text: t.text('continue'),
-                onPressed: validateAndProceed,
+                onPressed: (){
+                  validateAndProceed;
+                  Navigator.pushNamed(context, '/choose');
+                },
+
                 verticalPadding: 16,
               ),
 

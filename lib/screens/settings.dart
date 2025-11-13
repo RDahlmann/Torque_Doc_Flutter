@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../globals.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../providers/field_settings.dart';
 
-class Settingsscreen extends StatelessWidget {
+class Settingsscreen extends StatefulWidget {
+  @override
+  _SettingsscreenState createState() => _SettingsscreenState();
+}
+
+class _SettingsscreenState extends State<Settingsscreen>{
   @override
   Widget build(BuildContext context) {
     final fields = Provider.of<FieldSettings>(context);
@@ -51,6 +57,24 @@ class Settingsscreen extends StatelessWidget {
               ],
             ),
 
+            SizedBox(height: 24),
+            Text("Druckeinheit auswählen", style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Center(
+              child: DropdownButton<String>(
+                value: DRUCK_EINHEIT,
+                items: ['Bar', 'PSI']
+                    .map((unit) => DropdownMenuItem(value: unit, child: Text(unit)))
+                    .toList(),
+                onChanged: (val) async {
+                  if (val != null) {
+                    DRUCK_EINHEIT = val;
+                    await saveSettings(); // Speichert die Auswahl in SharedPreferences
+                    setState(() {});
+                  }
+                },
+              ),
+            ),
             SizedBox(height: 24),
 
             // 🔹 Pflichtfelder Checkboxen

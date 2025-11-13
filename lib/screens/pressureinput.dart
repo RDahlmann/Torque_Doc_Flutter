@@ -1,22 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import '../globals.dart';
+import '../styles/app_text_styles.dart';
+import '../utils/app_toast.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/translation.dart';
+import 'package:flutter/services.dart';
 
 class pressurescreen extends StatefulWidget {
-
   @override
   _pressurescreenstate createState() => _pressurescreenstate();
 }
 
-class _pressurescreenstate  extends State<pressurescreen> {
-  // Beispiel: Hier können Controller oder Variablen für jeden Screen definiert werden
+class _pressurescreenstate extends State<pressurescreen> {
   late TextEditingController exampleController;
-
+  late int _eingabe=0;
   @override
   void initState() {
     super.initState();
     exampleController = TextEditingController();
+    FlutterForegroundTask.initCommunicationPort();
+    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
+  }
+
+  void _handleTaskData(dynamic data) {}
+
+  void _sendCommand(String cmd) {
+    debugPrint("[BLE_SCREEN] Sending command: $cmd");
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'writeCommand',
+      'command': cmd,
+    });
   }
 
   @override
@@ -27,45 +42,76 @@ class _pressurescreenstate  extends State<pressurescreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPSI = DRUCK_EINHEIT == "PSI";
+    final String unitLabel = isPSI ? "PSI" : "Bar";
+    final int minDruck = isPSI ? (150 * 14.5038).round() : 150; // min in bar
+    final int maxDruck = isPSI ? (650 * 14.5038).round() : 650; // max in bar
+
     return WillPopScope(
-      onWillPop: () async => false, // verhindert System-Zurück
+      onWillPop: () async => false,
       child: AppTemplate(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               SizedBox(height: 24),
-
-              // Beispiel für Eingabefeld
               TextField(
-                controller: exampleController,
+                style: AppTextStyles.body,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
-                  labelText: "Druckeingabe",
-                  hintText: "Text eingeben",
+                  labelText: isPSI
+                      ? "Druckeingabe ${ (150*14.5038).round() } PSI - ${ (650*14.5038).round() } PSI"
+                      : "Druckeingabe 150 Bar - 650 Bar",
+                  hintText: "Bitte geben Sie den Druck ein",
+                  suffixIcon: Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Text(isPSI ? "PSI" : "Bar", style: AppTextStyles.body),
+                  ),
+                  suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                  labelStyle: AppTextStyles.body,
+                  hintStyle: AppTextStyles.body.copyWith(color: Colors.grey.shade400),
                 ),
                 onChanged: (value) {
-                  // Hier kannst du den Wert speichern oder validieren
-                  print("Eingabe: $value");
+                  // Nur lokale Variable setzen, SOLLDRUCK wird erst beim Weiter gedrückt
+                  _eingabe = int.tryParse(value) ?? 0;
                 },
               ),
-              SizedBox(height: 16),
 
-              // Weiter Button
               AppButtons.primaryText(
                 text: "Weiter",
                 onPressed: () {
-                  // Beispiel: Navigiere zum nächsten Screen
-                  // Navigator.push(context, MaterialPageRoute(builder: (_) => NextScreen()));
+                  int druckBar;
+                  if (isPSI) {
+                    druckBar = (_eingabe / 14.5038).round(); // Umrechnung PSI → Bar
+                  } else {
+                    druckBar = _eingabe;
+                  }
+
+                  if (druckBar < 150 || druckBar > 650) {
+                    AppToast.warning(
+                        isPSI
+                            ? "Solldruck muss zwischen ${(150*14.5038).round()} und ${(650*14.5038).round()} PSI liegen"
+                            : "Solldruck muss zwischen 150 und 650 Bar liegen"
+                    );
+                    SOLLDRUCK = 0;
+                    return;
+                  }else{
+                    SOLLDRUCK = druckBar; // In Bar speichern
+                    _sendCommand('-SETP $SOLLDRUCK\$');
+                    iskalibriert=false;
+                    Navigator.pushNamed(context, '/kalibration');
+                  }
+
+
                 },
                 verticalPadding: 16,
               ),
 
-              // Optional: Zurück Button (Navigation nur über Button)
               AppButtons.primaryText(
                 text: "Zurück",
                 onPressed: () {
-                  Navigator.pop(context); // Zurück zum vorherigen Screen
+                  Navigator.pop(context);
                 },
                 verticalPadding: 16,
               ),

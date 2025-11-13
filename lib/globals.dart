@@ -12,6 +12,10 @@ String Serialhose="";
 String Serialtool="";
 String Tool="";
 
+//Einheitsauswahl
+String DRUCK_EINHEIT = "Bar"; // default
+
+//Empfangsvariablen
 int? pwm;
 int? referenzzeitkal;
 int? vorreferenzzeit;
@@ -19,6 +23,8 @@ int? schraubennummer;
 int? druckmax;
 int? solldruck;
 
+//Solldruckvariable
+int SOLLDRUCK=0;
 //Zustandsvariablen
 bool Automatik = true;
 bool isfehler=false;
@@ -35,12 +41,14 @@ Future<void> loadSettings() async {
   final prefs = await SharedPreferences.getInstance();
   Automatik = prefs.getBool('Automatik') ?? true;
   currentLanguage = prefs.getString('language') ?? 'en';
+  DRUCK_EINHEIT = prefs.getString('druckEinheit') ?? 'Bar'; // neue Zeile
 }
 
 Future<void> saveSettings() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool('Automatik', Automatik);
   await prefs.setString('language', currentLanguage);
+  await prefs.setString('druckEinheit', DRUCK_EINHEIT); // neue Zeile
 }
 
 BluetoothDevice? bleDeviceForService;
