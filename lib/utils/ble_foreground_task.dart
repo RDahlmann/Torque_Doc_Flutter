@@ -249,29 +249,32 @@ class BleForegroundTask extends TaskHandler {
               writeCharacteristic!.value.listen((value) {
                 if (value.isEmpty) return;
 
-                // Empfangene Rohdaten in Buffer sammeln
                 final received = utf8.decode(value);
                 debugPrint("[BLE_TASK] Raw data: $received");
+                // Wenn das Paket mit $ beginnt, alten Buffer verwerfen
+                if (received.startsWith('\$')) {
+                  _buffer = '';
+                }
+                // Anhängen
                 _buffer += received;
 
-                // Prüfen, ob eine oder mehrere komplette Nachrichten vorliegen
-                while (_buffer.contains('\$') && _buffer.contains('~')) {
-                  final start = _buffer.indexOf('\$');
-                  final end = _buffer.indexOf('~', start);
-                  if (end == -1) break; // Nachricht noch unvollständig
+                // Prüfen, ob ein $…~ Block vorliegt
+                final lastDollar = _buffer.lastIndexOf('\$');
+                final lastTilde = _buffer.indexOf('~', lastDollar);
 
-                  // Nachricht extrahieren, führendes $ und abschließendes ~ werden entfernt
-                  final message = _buffer.substring(start + 1, end).trim();
-                  final cleanMessage = message.startsWith(r'$') ? message.substring(1) : message;
-
-                  // Debug: Zeige die saubere Nachricht
+                if (lastDollar != -1 && lastTilde != -1) {
+                  // Nur den letzten kompletten Block verarbeiten
+                  final message = _buffer.substring(lastDollar + 1, lastTilde).trim();
                   debugPrint("[BLE_TASK] Complete message parsed: '$message'");
 
-                  // Nachricht an Parser senden
-                  _parseBleMessage(cleanMessage);
+                  _parseBleMessage(message);
 
-                  // Buffer kürzen
-                  _buffer = _buffer.substring(end + 1);
+                  // Buffer danach leeren (alles davor war alt)
+                  _buffer = '';
+                }
+                else if (lastDollar != -1 && lastTilde == -1) {
+                  // Teilweise Nachricht: nur alles nach letztem $ behalten
+                  _buffer = _buffer.substring(lastDollar);
                 }
               });
 
@@ -298,15 +301,31 @@ class BleForegroundTask extends TaskHandler {
 
     if (data['event'] == 'writeCommand') {
       final cmd = data['command'] as String?;
-      if (writeCharacteristic != null && cmd != null) {
+      /* if (writeCharacteristic != null && cmd != null) {
         debugPrint("[BLE_TASK] Writing command: $cmd");
         await writeCharacteristic!.write(utf8.encode(cmd), withoutResponse: true);
       } else {
         debugPrint("[BLE_TASK] Cannot write command, characteristic or command is null");
       }
+    }*/
+      await writeCommandFragmented(cmd!);
     }
   }
 
+  Future<void> writeCommandFragmented(String cmd) async {
+    if (writeCharacteristic == null) return;
+
+    final bytes = utf8.encode(cmd);
+    const int chunkSize = 20; // BLE ohne Response ~20 Byte
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      final end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
+      final chunk = bytes.sublist(i, end);
+      await writeCharacteristic!.write(chunk, withoutResponse: true);
+      await Future.delayed(const Duration(milliseconds: 5)); // kurz warten, Arduino kann mitlesen
+    }
+
+    debugPrint("[BLE_TASK] Command sent fragmented: $cmd");
+  }
   @override
   Future<void> onDestroy(DateTime timestamp, bool isServiceStopped) async {
     debugPrint("[BLE_TASK] onDestroy at $timestamp, serviceStopped: $isServiceStopped");

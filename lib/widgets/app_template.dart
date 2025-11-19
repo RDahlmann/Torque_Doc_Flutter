@@ -96,7 +96,16 @@ class _AppTemplateState extends State<AppTemplate> {
                   if (!widget.hideSettingsIcon)
                     IconButton(
                       icon: Icon(Icons.settings, size: iconSize),
-                      onPressed: () => Navigator.pushNamed(context, '/settings'),
+                      onPressed: () async {
+                        // hier warten wir auf Rückgabe aus Settings
+                        final result = await Navigator.pushNamed(context, '/settings');
+                        if (result == true) {
+                          setState(() {
+                            // AppTemplate rebuildet das Widget.child
+                            // dadurch sieht der darunterliegende Screen die geänderten Werte
+                          });
+                        }
+                      },
                     )
                   else
                     SizedBox(width: iconSize + 16),

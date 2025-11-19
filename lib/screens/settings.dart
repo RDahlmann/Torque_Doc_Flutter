@@ -99,7 +99,7 @@ class _SettingsscreenState extends State<Settingsscreen>{
 
             AppButtons.primaryText(
               text: "Zurück",
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context,true),
               verticalPadding: 16,
             ),
           ],

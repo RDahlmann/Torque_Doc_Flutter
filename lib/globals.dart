@@ -25,11 +25,19 @@ int? solldruck;
 
 //Solldruckvariable
 int SOLLDRUCK=0;
+int SOLLDRUCKBAR=0;
+int SOLLDRUCKPSI=0;
 //Zustandsvariablen
 bool Automatik = true;
 bool isfehler=false;
 bool iskalibriert=false;
 bool isrunning=false;
+bool isSchrauben=false;
+bool iscomplete=false;
+bool isaborted1=false;
+bool isaborted2=false;
+int akt_schraube=0;
+int SCHRAUBENANZAHL=0;
 
 //BLE
 String Geraetename="";

@@ -8,11 +8,13 @@ class AppButtons {
     required VoidCallback onPressed,
     double width = double.infinity,
     double height = 50,
-    double verticalPadding = 8.0, // 👈 neuer Parameter
+    double verticalPadding = 8.0,
     IconData? icon,
+    Color backgroundColor = AppColors.primary, // standard Farbe
+    Color foregroundColor = Colors.white, // Textfarbe
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: verticalPadding), // Abstand oben & unten
+      padding: EdgeInsets.symmetric(vertical: verticalPadding),
       child: SizedBox(
         width: width,
         height: height,
@@ -24,8 +26,8 @@ class AppButtons {
           ),
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: backgroundColor,
+            foregroundColor: foregroundColor,
             elevation: 4,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -42,6 +44,8 @@ class AppButtons {
     double width = double.infinity,
     double height = 50,
     double verticalPadding = 8.0,
+    Color backgroundColor = AppColors.primary,   // 👈 hinzugefügt
+    Color foregroundColor = Colors.white,        // 👈 hinzugefügt
   }) {
     return primary(
       text: text,
@@ -50,6 +54,8 @@ class AppButtons {
       height: height,
       verticalPadding: verticalPadding,
       icon: null,
+      backgroundColor: backgroundColor,  // 👈 weitergeben
+      foregroundColor: foregroundColor,  // 👈 weitergeben
     );
   }
 }

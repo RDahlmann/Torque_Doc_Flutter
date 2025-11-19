@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import '../globals.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/translation.dart';
@@ -17,6 +19,18 @@ class _Menuscreenstate  extends State<Menuscreen> {
   void initState() {
     super.initState();
     exampleController = TextEditingController();
+    FlutterForegroundTask.initCommunicationPort();
+    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
+  }
+
+  void _handleTaskData(dynamic data) {}
+
+  void _sendCommand(String cmd) {
+    debugPrint("[BLE_SCREEN] Sending command: $cmd");
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'writeCommand',
+      'command': cmd,
+    });
   }
 
   @override
@@ -37,35 +51,35 @@ class _Menuscreenstate  extends State<Menuscreen> {
 
               SizedBox(height: 24),
 
-              // Beispiel für Eingabefeld
-              TextField(
-                controller: exampleController,
-                decoration: InputDecoration(
-                  labelText: "Menü",
-                  hintText: "Text eingeben",
-                ),
-                onChanged: (value) {
-                  // Hier kannst du den Wert speichern oder validieren
-                  print("Eingabe: $value");
-                },
-              ),
-              SizedBox(height: 16),
 
               // Weiter Button
               AppButtons.primaryText(
-                text: "Weiter",
+                text: "Automatikmodus",
                 onPressed: () {
-                  // Beispiel: Navigiere zum nächsten Screen
-                  // Navigator.push(context, MaterialPageRoute(builder: (_) => NextScreen()));
+                  isSchrauben=false;
+                  akt_schraube=1;
+                  iscomplete=false;
+                  isaborted1 = false;
+                  isaborted2 = false;
+                  Navigator.pushNamed(context, '/auto');
+                  _sendCommand('-STOP\$');
+                },
+                verticalPadding: 16,
+              ),
+              AppButtons.primaryText(
+                text: "Manuelles verschrauben",
+                onPressed: () {
+                  Navigator.pushNamed(context, '/manuell');
+                  _sendCommand('-Manuell $pwm $SOLLDRUCK\$');
                 },
                 verticalPadding: 16,
               ),
 
               // Optional: Zurück Button (Navigation nur über Button)
               AppButtons.primaryText(
-                text: "Zurück",
+                text: "Zurück zur Druckauswahl",
                 onPressed: () {
-                  Navigator.pop(context); // Zurück zum vorherigen Screen
+                  Navigator.pushReplacementNamed(context, '/choose');// Zurück zum vorherigen Screen
                 },
                 verticalPadding: 16,
               ),

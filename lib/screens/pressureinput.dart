@@ -83,9 +83,13 @@ class _pressurescreenstate extends State<pressurescreen> {
                 onPressed: () {
                   int druckBar;
                   if (isPSI) {
+                    SOLLDRUCKPSI=_eingabe;
                     druckBar = (_eingabe / 14.5038).round(); // Umrechnung PSI → Bar
+                    SOLLDRUCKBAR=druckBar;
                   } else {
                     druckBar = _eingabe;
+                    SOLLDRUCKBAR=_eingabe;
+                    SOLLDRUCKPSI=(_eingabe*14.503).round();
                   }
 
                   if (druckBar < 150 || druckBar > 650) {

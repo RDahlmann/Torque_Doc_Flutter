@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:torquedoc/styles/app_text_styles.dart';
 import '../globals.dart';
+import '../styles/RotatingSignal.dart';
+import '../styles/app_colors.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/translation.dart';
@@ -64,7 +66,13 @@ class _Kalibrierscreenstate extends State<Kalibrierscreen> {
                 Column(
                   children: [
                     const SizedBox(height: 40),
-                    const CircularProgressIndicator(),
+                    SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: RotatingSignal(
+                        color: AppColors.darkblue, // <-- beliebige Farbe
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       "Zum Kalibrieren Werkzeug von der Schraube lösen und Start gedrückt halten.\n Die Pumpe fährt den Druck langsam an und fügt drei Kontrollhübe durch",
