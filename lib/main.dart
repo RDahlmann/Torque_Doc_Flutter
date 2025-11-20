@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:torquedoc/utils/file_exporter.dart';
 
 import 'globals.dart';
 import 'utils/translation.dart';
@@ -27,7 +28,7 @@ Future<void> main() async {
 
   await loadSettings();
   debugPrint("[MAIN] Einstellungen geladen");
-
+  debugPrint("[MAIN] Logo geladen");
   // Alte ForegroundService stoppen, falls aktiv
   if (await FlutterForegroundTask.isRunningService) {
     await FlutterForegroundTask.stopService();

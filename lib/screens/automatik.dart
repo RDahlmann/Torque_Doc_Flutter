@@ -3,6 +3,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:torquedoc/styles/RotatingSignal.dart';
 import 'package:torquedoc/styles/app_text_styles.dart';
 import '../styles/FadingCircle.dart';
+import '../utils/file_exporter.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/translation.dart';
@@ -19,6 +20,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
   // Beispiel: Hier können Controller oder Variablen für jeden Screen definiert werden
   late TextEditingController exampleController;
   final TextEditingController _controller = TextEditingController();
+  List<Map<String, dynamic>> BLE_Werteliste = [];
 
   @override
   void initState() {
@@ -39,6 +41,11 @@ class _Autoscreenstate  extends State<Autoscreen> {
       });
     }
     if (data is Map && data['event'] == 'abgebrochen1') {
+      if (data['Werteliste'] != null && data['Werteliste'] is List) {
+        setState(() {
+          BLE_Werteliste = List<Map<String, dynamic>>.from(data['Werteliste']);
+        });
+      }
       setState(() {
         isrunning = false;
         isaborted1=true;
@@ -48,6 +55,11 @@ class _Autoscreenstate  extends State<Autoscreen> {
       });
     }
     if (data is Map && data['event'] == 'abgebrochen2') {
+      if (data['Werteliste'] != null && data['Werteliste'] is List) {
+        setState(() {
+          BLE_Werteliste = List<Map<String, dynamic>>.from(data['Werteliste']);
+        });
+      }
       setState(() {
         isrunning = false;
         isaborted1=false;
@@ -58,7 +70,12 @@ class _Autoscreenstate  extends State<Autoscreen> {
     }
 
     if (data is Map && data['event'] == 'angezogen') {
-
+      if (data['Werteliste'] != null && data['Werteliste'] is List) {
+        setState(() {
+          BLE_Werteliste = List<Map<String, dynamic>>.from(data['Werteliste']);
+        });
+        markiereLetztenEintrag("IO");
+      }
       setState(() {
         akt_schraube++;
         if(akt_schraube>SCHRAUBENANZAHL){
@@ -80,6 +97,18 @@ class _Autoscreenstate  extends State<Autoscreen> {
     }
 
   }
+  void markiereLetztenEintrag(String status) {
+    if (BLE_Werteliste.isNotEmpty) {
+      BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = akt_schraube;
+      BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKBAR;
+      BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = status;
+      setState(() {});
+
+      // 🔹 Direkt PDF exportieren, nachdem geändert
+      _sendPDF();
+    }
+  }
+  /// PDF Export aufrufen
   void _sendCommand(String cmd) {
     debugPrint("[BLE_SCREEN] Sending command: $cmd");
     FlutterForegroundTask.sendDataToTask({
@@ -88,9 +117,24 @@ class _Autoscreenstate  extends State<Autoscreen> {
     });
   }
 
+  void _sendPDF(){
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'pdferstellen',
+      'Werteliste': BLE_Werteliste,
+      'Projectnumber': Projectnumber,
+      'UserName': UserName,
+      'Serialpump': Serialpump,
+      'Serialhose': Serialhose,
+      'Serialtool': Serialtool,
+      'Tool': Tool,
+    });
+  }
+
   @override
   void dispose() {
+    FlutterForegroundTask.removeTaskDataCallback(_handleTaskData);
     exampleController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -183,7 +227,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                 onPressed: () {
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
-
+                  markiereLetztenEintrag("IO");
                   setState(() {
                     akt_schraube++;
                     if(akt_schraube>SCHRAUBENANZAHL){
@@ -215,6 +259,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
               AppButtons.primaryText(
                 text: isaborted1 ? 'Vorgang abgebrochen, Schraube ist nicht fest' : 'Die Schraube war beim Start nicht Lose',
                 onPressed: () {
+                  markiereLetztenEintrag("NIO");
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 

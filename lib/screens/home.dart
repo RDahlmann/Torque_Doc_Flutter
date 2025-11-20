@@ -241,35 +241,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 verticalPadding: 16,
               ),
 
-              AppButtons.primaryText(
-                text: "PDF Exportieren",
-                onPressed: () async {
-                  final data = [
-                    {"Zeit": "12:00", "Drehmoment": 15.6},
-                    {"Zeit": "12:01", "Drehmoment": 15.9},
-                  ];
-
-                  await FileExporter.exportData(
-                    data: data,
-                    format: "pdf", projectVar: 'TD1',
-                  );
-                },
-              ),
-
-              AppButtons.primaryText(
-                text: "CSV Exportieren",
-                onPressed: () async {
-                  final data = [
-                    {"Zeit": "12:00", "Drehmoment": 15.6},
-                    {"Zeit": "12:01", "Drehmoment": 15.9},
-                  ];
-
-                  await FileExporter.exportData(
-                    data: data,
-                    format: "csv", projectVar: 'TD1',
-                  );
-                },
-              ),
 
 
               AppButtons.primaryText(

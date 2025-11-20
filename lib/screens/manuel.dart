@@ -36,6 +36,7 @@ class _Manuelscreenstate  extends State<Manuelscreen> {
   @override
   void dispose() {
     exampleController.dispose();
+    FlutterForegroundTask.removeTaskDataCallback(_handleTaskData);
     super.dispose();
   }
 

@@ -36,6 +36,7 @@ bool isSchrauben=false;
 bool iscomplete=false;
 bool isaborted1=false;
 bool isaborted2=false;
+bool istorque=false;
 int akt_schraube=0;
 int SCHRAUBENANZAHL=0;
 

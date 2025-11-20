@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'dart:convert';
-
 import '../globals.dart';
+import 'file_exporter.dart';
+import 'dart:typed_data';
+import 'dart:convert'; // für base64Decode
+
 
 
 
@@ -16,7 +18,6 @@ class BleForegroundTask extends TaskHandler {
   final List<BluetoothDevice> devices = [];
   BluetoothDevice? connectedDevice;
   BluetoothCharacteristic? writeCharacteristic;
-
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter taskStarter) async {
     debugPrint("[BLE_TASK] onStart at $timestamp");
@@ -92,7 +93,7 @@ class BleForegroundTask extends TaskHandler {
       try {
         final parts = msg.split("&");
         if (parts.length >= 4) {
-          schraubennummer = int.tryParse(parts[0]);
+          schraubennummer = akt_schraube;
           druckmax = int.tryParse(parts[1]);
           solldruck = int.tryParse(parts[2]);
           final status = parts[3]; // angezogen / abgebrochen1 / abgebrochen2
@@ -103,15 +104,32 @@ class BleForegroundTask extends TaskHandler {
             case "angezogen":
               ergebnis = "iO";
               debugPrint("🟢 Schraube $schraubennummer angezogen (Druck=$druckmax / Soll=$solldruck)");
-              final eintrag = {
-                "Schraubennummer": schraubennummer,
-                "Druckmax": druckmax,
-                "Solldruck": solldruck,
-                "Ergebnis": ergebnis,
+             if(!istorque){
+               final eintrag = {
+                 "Nr.": schraubennummer,
+                 "Solldruck": druckmax,
+                 "Nenndruck": solldruck,
+                 "Solldrehmoment": "-",
+                 "Nenndrehmoment":"-",
+                 "IO":"OK",
+               };
+               BLE_Werteliste.add(eintrag);
+               debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+             }
+             else{
+               final eintrag = {
+                 "Nr.": schraubennummer,
+                 "Solldruck": druckmax,
+                 "Nenndruck": solldruck,
+                 "Solldrehmoment": "-",
+                 "Nenndrehmoment":"-",
+                 "IO":"IO",
+               };
+               BLE_Werteliste.add(eintrag);
+               debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+             }
 
-              };
-              BLE_Werteliste.add(eintrag);
-              debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+
               FlutterForegroundTask.sendDataToMain({
                 'event': 'angezogen',
                 'Werteliste':BLE_Werteliste,
@@ -121,14 +139,30 @@ class BleForegroundTask extends TaskHandler {
             case "abgebrochen1":
               ergebnis = "nIO";
               debugPrint("🟠 Schraube $schraubennummer abgebrochen1");
-              final eintrag = {
-                "Schraubennummer": schraubennummer,
-                "Druckmax": druckmax,
-                "Solldruck": solldruck,
-                "Ergebnis": ergebnis,
-              };
-              BLE_Werteliste.add(eintrag);
-              debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              if(!istorque){
+                final eintrag = {
+                  "Nr.": schraubennummer,
+                  "Solldruck": druckmax,
+                  "Nenndruck": solldruck,
+                  "Solldrehmoment": "-",
+                  "Nenndrehmoment":"-",
+                  "IO":"IO",
+                };
+                BLE_Werteliste.add(eintrag);
+                debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              }
+              else{
+                final eintrag = {
+                  "Nr.": schraubennummer,
+                  "Solldruck": druckmax,
+                  "Nenndruck": solldruck,
+                  "Solldrehmoment": "-",
+                  "Nenndrehmoment":"-",
+                  "IO":"IO",
+                };
+                BLE_Werteliste.add(eintrag);
+                debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              }
               FlutterForegroundTask.sendDataToMain({
                 'event': 'abgebrochen1',
                 'Werteliste':BLE_Werteliste,
@@ -138,14 +172,30 @@ class BleForegroundTask extends TaskHandler {
             case "abgebrochen2":
               ergebnis = "nIO";
               debugPrint("🔴 Schraube $schraubennummer abgebrochen2");
-              final eintrag = {
-                "Schraubennummer": schraubennummer,
-                "Druckmax": druckmax,
-                "Solldruck": solldruck,
-                "Ergebnis": ergebnis,
-              };
-              BLE_Werteliste.add(eintrag);
-              debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              if(!istorque){
+                final eintrag = {
+                  "Nr.": schraubennummer,
+                  "Solldruck": druckmax,
+                  "Nenndruck": solldruck,
+                  "Solldrehmoment": "-",
+                  "Nenndrehmoment":"-",
+                  "IO":"OK",
+                };
+                BLE_Werteliste.add(eintrag);
+                debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              }
+              else{
+                final eintrag = {
+                  "Nr.": schraubennummer,
+                  "Solldruck": druckmax,
+                  "Nenndruck": solldruck,
+                  "Solldrehmoment": "-",
+                  "Nenndrehmoment":"-",
+                  "IO":"OK",
+                };
+                BLE_Werteliste.add(eintrag);
+                debugPrint("📋 Datensatz hinzugefügt: $eintrag");
+              }
               FlutterForegroundTask.sendDataToMain({
                 'event': 'abgebrochen2',
                 'Werteliste':BLE_Werteliste,
@@ -298,6 +348,44 @@ class BleForegroundTask extends TaskHandler {
         });
       }
     }
+
+    if (data is Map && data['event'] == 'pdferstellen') {
+      try {
+        // ---- Daten extrahieren ----
+        final List<Map<String, dynamic>> werteliste = List<Map<String, dynamic>>.from(data['Werteliste']);
+        final String projectVar = data['Projectnumber'] ?? '';
+        final String userName = data['UserName'] ?? '';
+        final String serialPump = data['Serialpump'] ?? '';
+        final String serialHose = data['Serialhose'] ?? '';
+        final String serialTool = data['Serialtool'] ?? '';
+        final String tool = data['Tool'] ?? '';
+
+        // ---- Werteliste aktualisieren ----
+        if (werteliste.isNotEmpty && BLE_Werteliste.isNotEmpty) {
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = werteliste[werteliste.length - 1]["Nr."];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = werteliste[werteliste.length - 1]["Solldruck"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = werteliste[werteliste.length - 1]["IO"];
+        }
+
+        // ---- PDF erstellen ----
+        final filePath = await FileExporter.exportPdfInBackground(
+          data: werteliste,
+          projectVar: projectVar,
+          userName: userName,
+          serialPump: serialPump,
+          serialHose: serialHose,
+          serialTool: serialTool,
+          tool: tool,
+        );
+
+        debugPrint('[FOREGROUND TASK] PDF erstellt: $filePath');
+
+      } catch (e) {
+        debugPrint('[FOREGROUND TASK] PDF-Erstellung fehlgeschlagen: $e');
+      }
+
+    }
+
 
     if (data['event'] == 'writeCommand') {
       final cmd = data['command'] as String?;
