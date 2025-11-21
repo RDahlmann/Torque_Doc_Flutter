@@ -38,6 +38,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
         isaborted1=false;
         isaborted2=false;
         iscomplete=false;
+        isnotintol=false;
       });
     }
     if (data is Map && data['event'] == 'abgebrochen1') {
@@ -51,6 +52,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
         isaborted1=true;
         isaborted2=false;
         iscomplete=false;
+        isnotintol=false;
         _sendCommand('-STOP\$');
       });
     }
@@ -65,6 +67,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
         isaborted1=false;
         isaborted2=true;
         iscomplete=false;
+        isnotintol=false;
         _sendCommand('-STOP\$');
       });
     }
@@ -74,29 +77,64 @@ class _Autoscreenstate  extends State<Autoscreen> {
         setState(() {
           BLE_Werteliste = List<Map<String, dynamic>>.from(data['Werteliste']);
         });
+        if (toleranzpruefung()){
         markiereLetztenEintrag("IO");
-      }
-      setState(() {
-        akt_schraube++;
-        if(akt_schraube>SCHRAUBENANZAHL){
-          isrunning = false;
-          isaborted1=false;
-          isaborted2=false;
-          iscomplete=true;
-          _sendCommand('-STOP\$');
-
-        }else
+        setState(() {
+          akt_schraube++;
+          if(akt_schraube>SCHRAUBENANZAHL){
+            isrunning = false;
+            isaborted1=false;
+            isaborted2=false;
+            iscomplete=true;
+            isnotintol=false;
+            _sendCommand('-STOP\$');
+          }else
           {
             isrunning = false;
-          isaborted1=false;
-          isaborted2=false;
-          iscomplete=false;
+            isaborted1=false;
+            isaborted2=false;
+            iscomplete=false;
+            isnotintol=false;
           }
-      });
+        });
+        }
+        else{
+          setState(() {
+            markiereLetztenEintrag("NIO");
+            isrunning = false;
+            isaborted1=false;
+            isaborted2=false;
+            iscomplete=false;
+            isnotintol=true;
+            _sendCommand('-STOP\$');
+          });
 
-    }
-
+        }
+      }
+     }
   }
+
+  bool toleranzpruefung() {
+    if (BLE_Werteliste.isEmpty) return false;
+
+    final last = BLE_Werteliste.last;
+
+    int soll = SOLLDRUCKBAR;
+    int ist  = int.tryParse(last["Nenndruck"].toString()) ?? 0;
+
+    if (soll == 0) return false;  // WICHTIG
+
+    double percent = (ist / soll) * 100;
+
+    int? tol = int.tryParse(Toleranz);
+    if (tol == null) return false;
+
+    double tolmax = 100.0 + tol;
+    double tolmin = 100.0 - tol;
+
+    return percent >= tolmin && percent <= tolmax;
+  }
+
   void markiereLetztenEintrag(String status) {
     if (BLE_Werteliste.isNotEmpty) {
       BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = akt_schraube;
@@ -127,6 +165,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Serialhose': Serialhose,
       'Serialtool': Serialtool,
       'Tool': Tool,
+      'Toleranz':Toleranz,
     });
   }
 
@@ -203,6 +242,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted1 = false;
                   isaborted2 = false;
                   iscomplete = false;
+                  isnotintol=false;
                   _sendCommand('-STOP\$');
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },
@@ -227,31 +267,48 @@ class _Autoscreenstate  extends State<Autoscreen> {
                 onPressed: () {
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
-                  markiereLetztenEintrag("IO");
-                  setState(() {
-                    akt_schraube++;
-                    if(akt_schraube>SCHRAUBENANZAHL){
-                      isrunning = false;
-                      isaborted1=false;
-                      isaborted2=false;
-                      iscomplete=true;
-                      _sendCommand('-STOP\$');
+                  if(toleranzpruefung()){
+                    markiereLetztenEintrag("IO");
+                    setState(() {
+                      akt_schraube++;
+                      if(akt_schraube>SCHRAUBENANZAHL){
+                        isrunning = false;
+                        isaborted1=false;
+                        isaborted2=false;
+                        iscomplete=true;
+                        isnotintol=false;
+                        _sendCommand('-STOP\$');
 
-                    }else
-                    {
+                      }else
+                      {
+                        isrunning = false;
+                        isaborted1=false;
+                        isaborted2=false;
+                        iscomplete=false;
+                        isnotintol=false;
+                        if(Automatik){
+                          _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                        }
+                        else{
+                          _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                        }
+                      }
+                    }
+                    );
+                  }
+                  else{
+                    markiereLetztenEintrag("NIO");
+                    setState(() {
                       isrunning = false;
                       isaborted1=false;
                       isaborted2=false;
                       iscomplete=false;
-                      if(Automatik){
-                        _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
-                      }
-                      else{
-                        _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
-                      }
-                    }
+                      isnotintol=true;
+                      _sendCommand('-STOP\$');
+                    });
                   }
-                  );
+
+
                 },
                 verticalPadding: 16,
                 backgroundColor: AppColors.green,
@@ -268,6 +325,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                     isaborted1=false;
                     isaborted2=false;
                     iscomplete=false;
+                    isnotintol=false;
                     if(Automatik){
                       _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
                     }
@@ -287,6 +345,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted1 = false;
                   isaborted2 = false;
                   iscomplete = false;
+                  isnotintol=false;
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },
                 verticalPadding: 16,
@@ -331,6 +390,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted1 = false;
                   isaborted2 = false;
                   iscomplete = false;
+                  isnotintol=false;
                   _sendCommand('-STOP\$');
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },
@@ -338,7 +398,50 @@ class _Autoscreenstate  extends State<Autoscreen> {
               ),
             ],
           )
+          :(isnotintol)
+          ?Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [AppButtons.primaryText(
+              text: "WARNUNG: Istdruck nicht in Toleranz, bitte erneut Anziehen oder Toleranz prüfen!",
+              backgroundColor: Colors.deepOrange,
+              foregroundColor: Colors.black,
+              onPressed: () {
+                setState(() {
+                  isrunning = false;
+                  isaborted1 = false;
+                  isaborted2 = false;
+                  iscomplete = false;
+                  isnotintol=false;
+                  final now = DateTime.now();
+                  final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 
+                  if(Automatik){
+                    _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                  }
+                  else{
+                    _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                  }
+                });
+
+              },
+              verticalPadding: 16,
+            ),
+
+              AppButtons.primaryText(
+                text: "Zurück",
+                onPressed: () {
+                  isrunning = false;
+                  isaborted1 = false;
+                  isaborted2 = false;
+                  iscomplete = false;
+                  isnotintol=false;
+                  _sendCommand('-STOP\$');
+                  Navigator.pop(context); // Zurück zum vorherigen Screen
+                },
+                verticalPadding: 16,
+              ),
+            ],
+          )
           :Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -377,6 +480,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted1 = false;
                   isaborted2 = false;
                   iscomplete = false;
+                  isnotintol=false;
                   _sendCommand('-STOP\$');
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },

@@ -104,6 +104,7 @@ class BleForegroundTask extends TaskHandler {
             case "angezogen":
               ergebnis = "iO";
               debugPrint("🟢 Schraube $schraubennummer angezogen (Druck=$druckmax / Soll=$solldruck)");
+
              if(!istorque){
                final eintrag = {
                  "Nr.": schraubennummer,
@@ -359,6 +360,7 @@ class BleForegroundTask extends TaskHandler {
         final String serialHose = data['Serialhose'] ?? '';
         final String serialTool = data['Serialtool'] ?? '';
         final String tool = data['Tool'] ?? '';
+        final String toleranz=data['Toleranz']??'';
 
         // ---- Werteliste aktualisieren ----
         if (werteliste.isNotEmpty && BLE_Werteliste.isNotEmpty) {
@@ -376,6 +378,7 @@ class BleForegroundTask extends TaskHandler {
           serialHose: serialHose,
           serialTool: serialTool,
           tool: tool,
+          toleranz: toleranz,
         );
 
         debugPrint('[FOREGROUND TASK] PDF erstellt: $filePath');

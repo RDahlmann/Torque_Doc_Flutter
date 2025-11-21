@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import '../utils/app_toast.dart';
+import '../utils/ble_foreground_task.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../providers/field_settings.dart';
@@ -40,7 +42,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Daten laden
     loadSavedData();
+
   }
+
+
 
   Future<void> loadSavedData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -349,4 +354,5 @@ class _HomeScreenState extends State<HomeScreen> {
 
     AppToast.success("Alle Pflichtfelder korrekt ausgefüllt!");
   }
+
 }

@@ -23,6 +23,7 @@ class FileExporter {
     required String serialHose,
     required String serialTool,
     required String tool,
+    required String toleranz,
   }) async {
     if (data.isEmpty) return null;
 
@@ -45,7 +46,7 @@ class FileExporter {
 
     final pdf = pw.Document();
 
-    final headers = ["Nr.", "Solldruck", "Nenndruck", "Solldrehmoment", "Nenndrehmoment", "iO"];
+    final headers = ["Nr.", "Solldruck [bar]", "Istdruck [bar]", "Solldrehmoment[Nm]", "Istdrehmoment[Nm]", "IO"];
     final tableRows = data.map((row) {
       return [
         "${row['Nr.'] ?? ''}",
@@ -67,11 +68,11 @@ class FileExporter {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(20),
+        margin: const pw.EdgeInsets.fromLTRB(80,20,20,20),
         build: (context) => [
           // Logo
           pw.Container(
-            height: 95, // maximale Höhe des Logos
+            height: 80, // maximale Höhe des Logos
             child: pw.Image(
               pw.MemoryImage(logoBytes),
               fit: pw.BoxFit.contain, // ganze Breite oder Höhe wird angepasst, nichts wird abgeschnitten
@@ -90,6 +91,7 @@ class FileExporter {
               if (serialHose.isNotEmpty) ['Seriennumer Schlauch', serialHose],
               if (serialTool.isNotEmpty) ['Seriennumer Werkzeug', serialTool],
               if (tool.isNotEmpty) ['Werkzeug', tool],
+              if (toleranz.isNotEmpty) ['Toleranz', '$toleranz %'],
               ['Datum',dateString]
             ],
 
@@ -110,12 +112,12 @@ class FileExporter {
           pw.Table(
             border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
             columnWidths: {
-              0: const pw.FixedColumnWidth(30),
-              1: const pw.FixedColumnWidth(70),
-              2: const pw.FixedColumnWidth(70),
-              3: const pw.FixedColumnWidth(95),
-              4: const pw.FixedColumnWidth(95),
-              5: const pw.FixedColumnWidth(40),
+              0: const pw.FixedColumnWidth(20),
+              1: const pw.FixedColumnWidth(65),
+              2: const pw.FixedColumnWidth(65),
+              3: const pw.FixedColumnWidth(85),
+              4: const pw.FixedColumnWidth(85),
+              5: const pw.FixedColumnWidth(20),
             },
             children: [
               // Kopfzeile
