@@ -98,6 +98,14 @@ class _SettingsscreenState extends State<Settingsscreen>{
             SizedBox(height: 24),
 
             AppButtons.primaryText(
+              text: "UpdateTools",
+              onPressed: (){
+                Navigator.pushNamed(context, '/update');
+              },
+              verticalPadding: 16,
+            ),
+
+            AppButtons.primaryText(
               text: "Zurück",
               onPressed: () => Navigator.pop(context,true),
               verticalPadding: 16,

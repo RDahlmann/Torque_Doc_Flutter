@@ -181,7 +181,8 @@ class FileExporter {
         build: (context) => [
           // Logo
           pw.Container(
-            height: 80,
+            height: 30,
+            alignment: pw.Alignment.center,
             child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
           ),
           pw.SizedBox(height: 12),

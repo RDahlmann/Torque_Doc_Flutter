@@ -19,6 +19,7 @@ import 'screens/menu.dart';
 import 'screens/bluetooth_screen.dart';
 import 'screens/pressureinput.dart';
 import 'screens/tools.dart';
+import 'screens/upload_tool_scree.dart';
 import 'providers/field_settings.dart';
 import 'utils/ble_foreground_task.dart';
 
@@ -131,6 +132,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/pressure': (_) => pressurescreen(),
         '/settings': (_) => Settingsscreen(),
         '/tools': (_) => Toolsscreen(),
+        '/update':(_)=>UploadToolScreen(),
         '/bluetooth': (_) => const BluetoothScreen(isInitialScreen: true),
       },
       theme: ThemeData(
