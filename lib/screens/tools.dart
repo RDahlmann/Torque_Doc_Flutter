@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:torquedoc/globals.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/api_service.dart';
@@ -14,8 +16,8 @@ class Toolsscreen extends StatefulWidget {
 class _Toolsscreenstate extends State<Toolsscreen> {
   late TextEditingController customerCodeController;
   late TextEditingController torqueController;
-  List<Tool> tools = [];
-  Tool? selectedTool;
+  List<Tool1> tools = [];
+  Tool1? selectedTool;
   bool isLoading = false;
   String? errorMessage;
   double? interpolatedPressure;
@@ -26,8 +28,21 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     customerCodeController = TextEditingController();
     torqueController = TextEditingController();
     _loadSavedData();
+    FlutterForegroundTask.initCommunicationPort();
+    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
   }
 
+  void _handleTaskData(dynamic data) {
+
+  }
+
+  void _sendCommand(String cmd) {
+    debugPrint("[BLE_SCREEN] Sending command: $cmd");
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'writeCommand',
+      'command': cmd,
+    });
+  }
   @override
   void dispose() {
     customerCodeController.dispose();
@@ -50,7 +65,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     final jsonStr = prefs.getString('tools');
     if (jsonStr != null) {
       final data = jsonDecode(jsonStr) as List;
-      final savedTools = data.map((e) => Tool.fromJson(e)).toList();
+      final savedTools = data.map((e) => Tool1.fromJson(e)).toList();
       debugPrint("[DEBUG] Loaded tools: ${savedTools.map((t) => t.toolName).toList()}");
       if (savedTools.isNotEmpty) {
         setState(() {
@@ -64,7 +79,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
   }
 
   /// Tools speichern
-  Future<void> _saveTools(List<Tool> tools) async {
+  Future<void> _saveTools(List<Tool1> tools) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonStr = jsonEncode(tools.map((e) => e.toJson()).toList());
     await prefs.setString('tools', jsonStr);
@@ -116,7 +131,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
   }
 
   /// Lineare Interpolation von Druckwert anhand Drehmoment
-  double? interpolatePressure(Tool tool, double inputTorque) {
+  double? interpolatePressure(Tool1 tool, double inputTorque) {
     if (tool.torque.isEmpty || tool.pressure.isEmpty) return null;
     List<double> torqueList = tool.torque.map((e) => e.toDouble()).toList();
     List<double> pressureList = tool.pressure.map((e) => e.toDouble()).toList();
@@ -159,7 +174,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
               if (tools.isNotEmpty)
                 SizedBox(
                   width: double.infinity,
-                  child: DropdownButton<Tool>(
+                  child: DropdownButton<Tool1>(
                     value: selectedTool,
                     isExpanded: true,
                     items: tools.map((tool) {
@@ -246,16 +261,35 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                     });
                     return;
                   }
+                  else{
+                    setState(() {
+                      interpolatedPressure = pressure;
+                    });
 
-                  setState(() {
-                    interpolatedPressure = pressure;
-                  });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              "Interpolierter Druck: ${pressure?.toStringAsFixed(2)} bar")),
+                    );
+                    final tool = selectedTool;
+                    if (tool == null) return;
+                    SOLLDRUCK=pressure!.toInt();
+                    SOLLDRUCKBAR=SOLLDRUCK;
+                    SOLLDRUCKPSI=(SOLLDRUCK*14.503).round();
+                    iskalibriert=false;
+                    FlutterForegroundTask.sendDataToTask({
+                      'event': 'setToolData',
+                      'Solltorque': inputTorque.toInt(),
+                      'toolName': tool.toolName,
+                      'torque': tool.torque,
+                      'pressure': tool.pressure,
+                      'command': '-SETP $SOLLDRUCK\$',
+                    });
+                    Navigator.pushNamed(context, '/kalibration');
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            "Interpolierter Druck: ${pressure?.toStringAsFixed(2)} bar")),
-                  );
+                  }
+
+
                 },
               ),
 

@@ -105,6 +105,9 @@ class _pressurescreenstate extends State<pressurescreen> {
                     SOLLDRUCK = druckBar; // In Bar speichern
                     _sendCommand('-SETP $SOLLDRUCK\$');
                     iskalibriert=false;
+                    FlutterForegroundTask.sendDataToTask({
+                      'event': 'ispressure',
+                    });
                     Navigator.pushNamed(context, '/kalibration');
                   }
 

@@ -238,23 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   saveData('tool', value);
                 },
               ),
-              SizedBox(height: 16),
-              AppButtons.primaryText(
-                text: t.text('Bluetooth_send'),
-                onPressed: (){
-                },
-                verticalPadding: 16,
-              ),
 
-
-
-              AppButtons.primaryText(
-                text: t.text('Bluetooth'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/bluetooth');
-                },
-                verticalPadding: 16,
-              ),
 
               AppButtons.primaryText(
                 text: t.text('continue'),
@@ -266,56 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 verticalPadding: 16,
               ),
 
-              AppButtons.primaryText(
-                text: t.text('Auto'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/auto');
-                },
-                verticalPadding: 16,
-              ),
 
-              AppButtons.primaryText(
-                text: t.text('Choose'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/choose');
-                },
-                verticalPadding: 16,
-              ),
-              AppButtons.primaryText(
-                text: t.text('Kalibration'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/kalibration');
-                },
-                verticalPadding: 16,
-              ),
-              AppButtons.primaryText(
-                text: t.text('Manuell'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/manuell');
-                },
-                verticalPadding: 16,
-              ),
-              AppButtons.primaryText(
-                text: t.text('Hauptmenü'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/menu');
-                },
-                verticalPadding: 16,
-              ),
-              AppButtons.primaryText(
-                text: t.text('Pressure'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/pressure');
-                },
-                verticalPadding: 16,
-              ),
-              AppButtons.primaryText(
-                text: t.text('Tools'),
-                onPressed: (){
-                  Navigator.pushNamed(context, '/tools');
-                },
-                verticalPadding: 16,
-              ),
 
             ],
           ),

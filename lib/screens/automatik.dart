@@ -138,12 +138,25 @@ class _Autoscreenstate  extends State<Autoscreen> {
   void markiereLetztenEintrag(String status) {
     if (BLE_Werteliste.isNotEmpty) {
       BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = akt_schraube;
-      BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKBAR;
       BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = status;
-      setState(() {});
+      if(DRUCK_EINHEIT=='PSI'){
+        BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKPSI;
+        BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] =
+            (BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] * 14.503).round();
+
+        _sendPDFPSI();
+        setState(() {});
+      }else{
+        BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKBAR;
+        _sendPDFbar();
+        setState(() {});
+      }
+
+
+
 
       // 🔹 Direkt PDF exportieren, nachdem geändert
-      _sendPDF();
+
     }
   }
   /// PDF Export aufrufen
@@ -154,8 +167,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'command': cmd,
     });
   }
-
-  void _sendPDF(){
+  void _sendPDFbar(){
     FlutterForegroundTask.sendDataToTask({
       'event': 'pdferstellen',
       'Werteliste': BLE_Werteliste,
@@ -166,6 +178,21 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Serialtool': Serialtool,
       'Tool': Tool,
       'Toleranz':Toleranz,
+      'Einheit':"bar",
+    });
+  }
+  void _sendPDFPSI(){
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'pdferstellen',
+      'Werteliste': BLE_Werteliste,
+      'Projectnumber': Projectnumber,
+      'UserName': UserName,
+      'Serialpump': Serialpump,
+      'Serialhose': Serialhose,
+      'Serialtool': Serialtool,
+      'Tool': Tool,
+      'Toleranz':Toleranz,
+      'Einheit':"PSI",
     });
   }
 
@@ -337,19 +364,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                 backgroundColor: AppColors.red,
                 verticalPadding: 16,
               ),
-              AppButtons.primaryText(
-                text: "Zurück",
-                onPressed: () {
-                  _sendCommand('-STOP\$');
-                  isrunning = false;
-                  isaborted1 = false;
-                  isaborted2 = false;
-                  iscomplete = false;
-                  isnotintol=false;
-                  Navigator.pop(context); // Zurück zum vorherigen Screen
-                },
-                verticalPadding: 16,
-              ),
+
             ],
           )
           : (iscomplete)
@@ -426,20 +441,6 @@ class _Autoscreenstate  extends State<Autoscreen> {
               },
               verticalPadding: 16,
             ),
-
-              AppButtons.primaryText(
-                text: "Zurück",
-                onPressed: () {
-                  isrunning = false;
-                  isaborted1 = false;
-                  isaborted2 = false;
-                  iscomplete = false;
-                  isnotintol=false;
-                  _sendCommand('-STOP\$');
-                  Navigator.pop(context); // Zurück zum vorherigen Screen
-                },
-                verticalPadding: 16,
-              ),
             ],
           )
           :Column(

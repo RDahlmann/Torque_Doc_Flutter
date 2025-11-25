@@ -12,8 +12,12 @@ import 'dart:convert'; // für base64Decode
 
 // 🔹 Liste für empfangene BLE-Werte
 List<Map<String, dynamic>> BLE_Werteliste = [];
-
-
+List<int> currentTorqueList = [];
+List<int> currentPressureList = [];
+String currentToolName = "";
+bool istorque=false;
+int solltorque=0;
+int nenntorque=0;
 class BleForegroundTask extends TaskHandler {
   final List<BluetoothDevice> devices = [];
   BluetoothDevice? connectedDevice;
@@ -118,12 +122,14 @@ class BleForegroundTask extends TaskHandler {
                debugPrint("📋 Datensatz hinzugefügt: $eintrag");
              }
              else{
+               nenntorque=interpolateTorque(druckmax!)!.round();
                final eintrag = {
+
                  "Nr.": schraubennummer,
                  "Solldruck": druckmax,
                  "Nenndruck": solldruck,
-                 "Solldrehmoment": "-",
-                 "Nenndrehmoment":"-",
+                 "Solldrehmoment":solltorque,
+                 "Nenndrehmoment":nenntorque,
                  "IO":"IO",
                };
                BLE_Werteliste.add(eintrag);
@@ -145,7 +151,7 @@ class BleForegroundTask extends TaskHandler {
                   "Nr.": schraubennummer,
                   "Solldruck": druckmax,
                   "Nenndruck": solldruck,
-                  "Solldrehmoment": "-",
+                  "Solldrehmoment": "=",
                   "Nenndrehmoment":"-",
                   "IO":"IO",
                 };
@@ -153,12 +159,15 @@ class BleForegroundTask extends TaskHandler {
                 debugPrint("📋 Datensatz hinzugefügt: $eintrag");
               }
               else{
+
+                nenntorque=interpolateTorque(druckmax!)!.round();
                 final eintrag = {
+
                   "Nr.": schraubennummer,
                   "Solldruck": druckmax,
                   "Nenndruck": solldruck,
-                  "Solldrehmoment": "-",
-                  "Nenndrehmoment":"-",
+                  "Solldrehmoment":solltorque,
+                  "Nenndrehmoment":nenntorque,
                   "IO":"IO",
                 };
                 BLE_Werteliste.add(eintrag);
@@ -178,21 +187,23 @@ class BleForegroundTask extends TaskHandler {
                   "Nr.": schraubennummer,
                   "Solldruck": druckmax,
                   "Nenndruck": solldruck,
-                  "Solldrehmoment": "-",
+                  "Solldrehmoment":"-",
                   "Nenndrehmoment":"-",
-                  "IO":"OK",
+                  "IO":"IO",
                 };
                 BLE_Werteliste.add(eintrag);
                 debugPrint("📋 Datensatz hinzugefügt: $eintrag");
               }
               else{
+                nenntorque=interpolateTorque(druckmax!)!.round();
                 final eintrag = {
+
                   "Nr.": schraubennummer,
                   "Solldruck": druckmax,
                   "Nenndruck": solldruck,
-                  "Solldrehmoment": "-",
-                  "Nenndrehmoment":"-",
-                  "IO":"OK",
+                  "Solldrehmoment":solltorque,
+                  "Nenndrehmoment":nenntorque,
+                  "IO":"IO",
                 };
                 BLE_Werteliste.add(eintrag);
                 debugPrint("📋 Datensatz hinzugefügt: $eintrag");
@@ -218,6 +229,27 @@ class BleForegroundTask extends TaskHandler {
     }
 
     debugPrint("❓ Unbekannte Nachricht: $msg");
+  }
+
+  double? interpolateTorque(int druck,) {
+    if (currentPressureList.isEmpty || currentTorqueList.isEmpty) return null;
+    if (currentPressureList.length != currentTorqueList.length) return null;
+
+    double d = druck.toDouble();
+
+    List<double> p = currentPressureList.map((e) => e.toDouble()).toList();
+    List<double> t = currentTorqueList.map((e) => e.toDouble()).toList();
+
+    if (d <= p.first) return t.first;
+    if (d >= p.last) return t.last;
+
+    for (int i = 0; i < p.length - 1; i++) {
+      if (d >= p[i] && d <= p[i+1]) {
+        return t[i] + (d - p[i]) * (t[i+1] - t[i]) / (p[i+1] - p[i]);
+      }
+    }
+
+    return null;
   }
 
   @override
@@ -349,7 +381,29 @@ class BleForegroundTask extends TaskHandler {
         });
       }
     }
-
+    if (data is Map && data['event'] == 'setToolData') {
+      currentTorqueList = List<int>.from(data['torque'] ?? []);
+      currentPressureList = List<int>.from(data['pressure'] ?? []);
+      currentToolName = data['toolName'] ?? "";
+      istorque=true;
+      solltorque=data['Solltorque']??0;
+      final cmd = data['command'] as String?;
+      /* if (writeCharacteristic != null && cmd != null) {
+        debugPrint("[BLE_TASK] Writing command: $cmd");
+        await writeCharacteristic!.write(utf8.encode(cmd), withoutResponse: true);
+      } else {
+        debugPrint("[BLE_TASK] Cannot write command, characteristic or command is null");
+      }
+    }*/
+      await writeCommandFragmented(cmd!);
+      debugPrint("[BLE_TASK] Tooldaten übernommen:");
+      debugPrint("Torque: $currentTorqueList");
+      debugPrint("Pressure: $currentPressureList");
+      debugPrint("Tool: $currentToolName");
+    }
+    if (data is Map && data['event']== 'ispressure') {
+      istorque=false;
+    }
     if (data is Map && data['event'] == 'pdferstellen') {
       try {
         // ---- Daten extrahieren ----
@@ -361,11 +415,13 @@ class BleForegroundTask extends TaskHandler {
         final String serialTool = data['Serialtool'] ?? '';
         final String tool = data['Tool'] ?? '';
         final String toleranz=data['Toleranz']??'';
+        final String einheit=data['Einheit']??'';
 
         // ---- Werteliste aktualisieren ----
         if (werteliste.isNotEmpty && BLE_Werteliste.isNotEmpty) {
           BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = werteliste[werteliste.length - 1]["Nr."];
           BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = werteliste[werteliste.length - 1]["Solldruck"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] = werteliste[werteliste.length - 1]["Nenndruck"];
           BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = werteliste[werteliste.length - 1]["IO"];
         }
 
@@ -379,6 +435,7 @@ class BleForegroundTask extends TaskHandler {
           serialTool: serialTool,
           tool: tool,
           toleranz: toleranz,
+          Einheit: einheit,
         );
 
         debugPrint('[FOREGROUND TASK] PDF erstellt: $filePath');
@@ -419,13 +476,19 @@ class BleForegroundTask extends TaskHandler {
   }
   @override
   Future<void> onDestroy(DateTime timestamp, bool isServiceStopped) async {
-    debugPrint("[BLE_TASK] onDestroy at $timestamp, serviceStopped: $isServiceStopped");
-    await FlutterBluePlus.stopScan();
-    debugPrint("[BLE_TASK] Scan stopped");
+    debugPrint("[BLE_TASK] onDestroy called, disconnecting BLE...");
+
+    if (writeCharacteristic != null) {
+      await writeCharacteristic!.setNotifyValue(false);
+      writeCharacteristic = null;
+    }
 
     if (connectedDevice != null) {
       await connectedDevice!.disconnect();
-      debugPrint("[BLE_TASK] Disconnected from device: ${connectedDevice!.name}");
+      connectedDevice = null;
+      debugPrint("[BLE_TASK] BLE device disconnected");
     }
+
+    await FlutterBluePlus.stopScan();
   }
 }

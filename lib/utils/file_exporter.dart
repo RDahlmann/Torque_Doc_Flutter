@@ -114,6 +114,7 @@ class FileExporter {
     required String serialTool,
     required String tool,
     required String toleranz,
+    required String Einheit,
   }) async {
     if (data.isEmpty) return null;
 
@@ -162,7 +163,7 @@ class FileExporter {
     }).toList();
 
     // --- Messwerte Tabelle ---
-    final headers = ["Nr.", "Solldruck [bar]", "Istdruck [bar]", "Solldrehmoment [Nm]", "Istdrehmoment [Nm]", "IO"];
+    final headers = ["Nr.", "Solldruck [$Einheit]", "Istdruck [$Einheit]", "Solldrehmoment [Nm]", "Istdrehmoment [Nm]", "IO"];
     final tableRows = data.map((row) {
       return [
         "${row['Nr.'] ?? ''}",
