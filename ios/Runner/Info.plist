@@ -45,5 +45,30 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+    <!-- iOS Permissions / Usage Descriptions -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Wir benötigen deinen Standort, um die App korrekt zu nutzen.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Wir benötigen Standortzugriff im Hintergrund, z.B. für Bluetooth Services.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Wir benötigen Bluetooth-Zugriff, um Geräte zu verbinden.</string>
+
+
+    <!-- Background Modes -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>bluetooth-central</string>
+        <string>location</string>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- Optional: App Transport Security für http -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+
 </dict>
 </plist>
