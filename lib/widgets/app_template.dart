@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/ble_foreground_task.dart';
 import '../screens/bluetooth_screen.dart';
+import '../utils/translation.dart';
 
 class AppTemplate extends StatefulWidget {
   final Widget child;
@@ -22,7 +24,7 @@ class AppTemplate extends StatefulWidget {
 class _AppTemplateState extends State<AppTemplate> {
   StreamSubscription<dynamic>? _taskDataSubscription;
   bool isConnected = false;
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -85,7 +87,7 @@ class _AppTemplateState extends State<AppTemplate> {
                             ),
                             SizedBox(width: screenWidth * 0.01),
                             Text(
-                              isConnected ? "Verbunden" : "Nicht verbunden",
+                              isConnected ? t.text('temp1') : t.text('temp2'),
                               style: TextStyle(fontSize: statusFontSize),
                             ),
                           ],

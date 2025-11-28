@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import '../globals.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
@@ -14,7 +15,7 @@ class Menuscreen extends StatefulWidget {
 class _Menuscreenstate  extends State<Menuscreen> {
   // Beispiel: Hier können Controller oder Variablen für jeden Screen definiert werden
   late TextEditingController exampleController;
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -54,7 +55,7 @@ class _Menuscreenstate  extends State<Menuscreen> {
 
               // Weiter Button
               AppButtons.primaryText(
-                text: "Automatikmodus",
+                text: t.text('menu1'),
                 onPressed: () {
                   isSchrauben=false;
                   akt_schraube=1;
@@ -67,7 +68,7 @@ class _Menuscreenstate  extends State<Menuscreen> {
                 verticalPadding: 16,
               ),
               AppButtons.primaryText(
-                text: "Manuelles verschrauben",
+                text: t.text('menu2'),
                 onPressed: () {
                   Navigator.pushNamed(context, '/manuell');
                   _sendCommand('-Manuell $pwm $SOLLDRUCK\$');
@@ -77,7 +78,7 @@ class _Menuscreenstate  extends State<Menuscreen> {
 
               // Optional: Zurück Button (Navigation nur über Button)
               AppButtons.primaryText(
-                text: "Zurück zur Druckauswahl",
+                text: t.text('menu3'),
                 onPressed: () {
                   Navigator.pushReplacementNamed(context, '/choose');// Zurück zum vorherigen Screen
                 },

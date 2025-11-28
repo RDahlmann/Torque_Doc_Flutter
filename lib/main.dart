@@ -26,7 +26,8 @@ import 'utils/ble_foreground_task.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("[MAIN] Widgets binding initialisiert");
-
+  final translations = Translations();
+  await translations.loadSavedLanguage();
   await loadSettings();
   debugPrint("[MAIN] Einstellungen geladen");
   debugPrint("[MAIN] Logo geladen");

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:provider/provider.dart';
+import 'package:torquedoc/utils/translation.dart';
 import '../globals.dart';
 import 'file_exporter.dart';
 import 'dart:typed_data';
@@ -424,9 +426,10 @@ class BleForegroundTask extends TaskHandler {
           BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] = werteliste[werteliste.length - 1]["Nenndruck"];
           BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = werteliste[werteliste.length - 1]["IO"];
         }
-
+        final t = Translations()..setLocale(data['Trans']);
         // ---- PDF erstellen ----
         final filePath = await FileExporter.exportPdfInBackground(
+          t:t,
           data: werteliste,
           projectVar: projectVar,
           userName: userName,
@@ -441,6 +444,14 @@ class BleForegroundTask extends TaskHandler {
         debugPrint('[FOREGROUND TASK] PDF erstellt: $filePath');
 
       } catch (e) {
+        print("PDF-Debug:");
+        print("Projectnumber: $Projectnumber");
+        print("UserName: $UserName");
+        print("Serialpump: $Serialpump");
+        print("Serialhose: $Serialhose");
+        print("Serialtool: $Serialtool");
+        print("Tool: $Tool");
+        print("Toleranz: $Toleranz");
         debugPrint('[FOREGROUND TASK] PDF-Erstellung fehlgeschlagen: $e');
       }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/translation.dart';
@@ -12,7 +13,7 @@ class Auswahlscreen extends StatefulWidget {
 class _Auswahlscreenstate  extends State<Auswahlscreen> {
   // Beispiel: Hier können Controller oder Variablen für jeden Screen definiert werden
   late TextEditingController exampleController;
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -40,7 +41,7 @@ class _Auswahlscreenstate  extends State<Auswahlscreen> {
 
               // Weiter Button
               AppButtons.primaryText(
-                text: "Weiter mit Druckeingabe",
+                text: t.text('ch1'),
                 onPressed: (){
                   Navigator.pushNamed(context, '/pressure');
                 },
@@ -49,7 +50,7 @@ class _Auswahlscreenstate  extends State<Auswahlscreen> {
 
               // Optional: Zurück Button (Navigation nur über Button)
               AppButtons.primaryText(
-                text: "Weiter mit Werkzeugauswahl",
+                text: t.text('ch2'),
                 onPressed: (){
                   Navigator.pushNamed(context, '/tools');
                 },

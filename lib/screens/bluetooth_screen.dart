@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import '../main.dart';
+import '../utils/translation.dart';
 import '../widgets/app_buttons.dart';
 import '../widgets/app_template.dart';
 import '../styles/app_text_styles.dart';
@@ -26,7 +28,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   List<DeviceData> devicesList = [];
   DeviceData? selectedDevice;
   bool isConnected = false;
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -66,14 +68,14 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       setState(() => isConnected = true);
       debugPrint("[BLE_SCREEN] Device connected: ${data['name']} (${data['id']})");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gerät verbunden!')),
+        SnackBar(content: Text(t.text('bt1'))),
       );
     }
 
     if (data['event'] == 'connectError') {
       debugPrint("[BLE_SCREEN] Connection error: ${data['error']}");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler: ${data['error']}')),
+        SnackBar(content: Text(t.text('bt2'))),
       );
     }
   }
@@ -113,7 +115,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
           children: [
             const SizedBox(height: 16),
             DropdownButton<DeviceData>(
-              hint: const Text('Gerät auswählen'),
+              hint: Text(t.text('bt3')),
               isExpanded: true,
               value: selectedDevice,
               items: devicesList
@@ -138,15 +140,9 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
               verticalPadding: 16,
             ),
             const SizedBox(height: 16),
+
             AppButtons.primaryText(
-              text: "Sende \$SETP 150~",
-              onPressed: () {
-                _sendCommand('-SETP 150\$');
-              },
-              verticalPadding: 16,
-            ),
-            AppButtons.primaryText(
-              text: "Weiter",
+             text: t.text('weiter'),
               onPressed: () {
                 if (widget.isInitialScreen) {
                   Navigator.pushReplacementNamed(context, '/home');

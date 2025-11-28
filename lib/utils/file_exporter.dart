@@ -7,6 +7,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'dart:typed_data';
 
+import 'package:provider/provider.dart';
+import 'package:torquedoc/utils/translation.dart';
+
 class FileExporter {
 
 
@@ -106,6 +109,7 @@ class FileExporter {
 
   /// PDF-Erstellung, für Hintergrund-Task optimiert
   static Future<String?> exportPdfInBackground({
+    required Translations t,
     required List<Map<String, dynamic>> data,
     required String projectVar,
     required String userName,
@@ -161,9 +165,21 @@ class FileExporter {
       final nr = row['Nr.'] ?? row['Nr'] ?? '';
       return nr.toString();
     }).toList();
-
+    final headerNo     = t.text('pdf1'); // "Nr." / "No."
+    final headerTarget = t.textArgs('pdf2', {'Value': Einheit}); // e.g. "Solldruck [bar]"
+    final headerActual = t.textArgs('pdf3', {'Value': Einheit});
+    final headerTgtTrq = t.text('pdf4'); // "Solldrehmoment [Nm]"
+    final headerActTrq = t.text('pdf5'); // "Istdrehmoment [Nm]"
+    final headerIO     = "IO"; // "IO" / "OK"
     // --- Messwerte Tabelle ---
-    final headers = ["Nr.", "Solldruck [$Einheit]", "Istdruck [$Einheit]", "Solldrehmoment [Nm]", "Istdrehmoment [Nm]", "IO"];
+    final headers = [
+      headerNo,
+      headerTarget,
+      headerActual,
+      headerTgtTrq,
+      headerActTrq,
+      headerIO,
+    ];
     final tableRows = data.map((row) {
       return [
         "${row['Nr.'] ?? ''}",
@@ -180,6 +196,7 @@ class FileExporter {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.fromLTRB(80,20,20,20),
         build: (context) => [
+
           // Logo
           pw.Container(
             height: 30,
@@ -192,14 +209,14 @@ class FileExporter {
           pw.Table.fromTextArray(
             headers: [],
             data: [
-              if (userName.isNotEmpty) ['Name', userName],
-              if (projectVar.isNotEmpty) ['Projektnummer', projectVar],
-              if (serialPump.isNotEmpty) ['Seriennumer Pumpe', serialPump],
-              if (serialHose.isNotEmpty) ['Seriennumer Schlauch', serialHose],
-              if (serialTool.isNotEmpty) ['Seriennumer Werkzeug', serialTool],
-              if (tool.isNotEmpty) ['Werkzeug', tool],
-              if (toleranz.isNotEmpty) ['Toleranz', '$toleranz %'],
-              ['Datum', dateString]
+              if (userName.isNotEmpty) [t.text('home1'), userName],
+              if (projectVar.isNotEmpty) [t.text('home3'), projectVar],
+              if (serialPump.isNotEmpty) [t.text('home9'), serialPump],
+              if (serialHose.isNotEmpty) [t.text('home11'), serialHose],
+              if (serialTool.isNotEmpty) [t.text('home13'), serialTool],
+              if (tool.isNotEmpty) [t.text('home15'), tool],
+              if (toleranz.isNotEmpty) [t.text('home7'), '$toleranz %'],
+              [t.text('pdf6'), dateString]
             ],
             border: null,
             cellPadding: const pw.EdgeInsets.only(bottom: 4),
@@ -231,7 +248,7 @@ class FileExporter {
                     child: pw.Text(
                       h,
                       textAlign: pw.TextAlign.center,
-                      style: pw.TextStyle(color: PdfColors.white, font: myFontsemi, fontSize: 11, fontWeight: pw.FontWeight.bold),
+                      style: pw.TextStyle(color: PdfColors.white, font: myFontsemi, fontSize: 8, fontWeight: pw.FontWeight.bold),
                     ),
                   ),
                 ).toList(),

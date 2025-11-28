@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   }
 
-
+  late final t = Provider.of<Translations>(context);
 
   Future<void> loadSavedData() async {
     final prefs = await SharedPreferences.getInstance();

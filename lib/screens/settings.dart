@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../globals.dart';
+import '../utils/translation.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../providers/field_settings.dart';
@@ -14,7 +15,7 @@ class _SettingsscreenState extends State<Settingsscreen>{
   @override
   Widget build(BuildContext context) {
     final fields = Provider.of<FieldSettings>(context);
-
+    late final t = Provider.of<Translations>(context);
     return AppTemplate(
       hideSettingsIcon: true,
       child: SingleChildScrollView(
@@ -24,7 +25,7 @@ class _SettingsscreenState extends State<Settingsscreen>{
             SizedBox(height: 24),
 
             // 🔹 Sprache
-            Text("Sprache auswählen", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(t.text('set1'), style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
             Center(
               child: DropdownButton<String>(
@@ -32,13 +33,16 @@ class _SettingsscreenState extends State<Settingsscreen>{
                 items: ['Deutsch', 'Englisch']
                     .map((lang) => DropdownMenuItem(value: lang, child: Text(lang)))
                     .toList(),
-                onChanged: (val) {
+                onChanged: (val) async {
                   if (val != null) {
-                    fields.setLanguage(val == 'Deutsch' ? 'de' : 'en');
+                    String langCode = val == 'Deutsch' ? 'de' : 'en';
+                    fields.setLanguage(langCode);     // FieldSettings updaten
+                    await t.setLocale(langCode);      // Übersetzungen updaten
                   }
                 },
               ),
             ),
+
 
             SizedBox(height: 24),
 
@@ -46,19 +50,31 @@ class _SettingsscreenState extends State<Settingsscreen>{
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Modus", style: TextStyle(fontWeight: FontWeight.bold)),
-                Switch(
-                  value: fields.automatik,
-                  onChanged: (val) => fields.setAutomatik(val),
-                  activeColor: Colors.blue,
-                  inactiveThumbColor: Colors.grey,
-                  inactiveTrackColor: Colors.grey.shade300,
+                Text(t.text('set2'), style: TextStyle(fontWeight: FontWeight.bold)),
+
+                Row(
+                  children: [
+                    Text(
+                      fields.automatik
+                          ? t.text('set3')
+                          : t.text('set4'),
+                    ),
+                    SizedBox(width: 8),
+
+                    Switch(
+                      value: fields.automatik,
+                      onChanged: (val) => fields.setAutomatik(val),
+                      activeColor: Colors.blue,
+                      inactiveThumbColor: Colors.grey,
+                      inactiveTrackColor: Colors.grey.shade300,
+                    ),
+                  ],
                 ),
               ],
             ),
 
             SizedBox(height: 24),
-            Text("Druckeinheit auswählen", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(t.text('set10'), style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
             Center(
               child: DropdownButton<String>(
@@ -78,19 +94,19 @@ class _SettingsscreenState extends State<Settingsscreen>{
             SizedBox(height: 24),
 
             // 🔹 Pflichtfelder Checkboxen
-            Text("Pflichtfelder", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(t.text('set5'), style: TextStyle(fontWeight: FontWeight.bold)),
             CheckboxListTile(
-              title: Text("Name"),
+              title: Text(t.text('set6')),
               value: fields.requireName,
               onChanged: (val) => fields.setField('requireName', val!),
             ),
             CheckboxListTile(
-              title: Text("Seriennummer Werkzeug"),
+              title: Text(t.text('set7')),
               value: fields.requireSerialTool,
               onChanged: (val) => fields.setField('requireSerialTool', val!),
             ),
             CheckboxListTile(
-              title: Text("Seriennummer Schlauch"),
+              title: Text(t.text('set8')),
               value: fields.requireSerialHose,
               onChanged: (val) => fields.setField('requireSerialHose', val!),
             ),
@@ -98,7 +114,7 @@ class _SettingsscreenState extends State<Settingsscreen>{
             SizedBox(height: 24),
 
             AppButtons.primaryText(
-              text: "UpdateTools",
+              text: t.text('set9'),
               onPressed: (){
                 Navigator.pushNamed(context, '/update');
               },
@@ -106,7 +122,7 @@ class _SettingsscreenState extends State<Settingsscreen>{
             ),
 
             AppButtons.primaryText(
-              text: "Zurück",
+              text: t.text('zurueck'),
               onPressed: () => Navigator.pop(context,true),
               verticalPadding: 16,
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import 'package:torquedoc/styles/RotatingSignal.dart';
 import 'package:torquedoc/styles/app_text_styles.dart';
 import '../styles/FadingCircle.dart';
@@ -21,7 +22,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
   late TextEditingController exampleController;
   final TextEditingController _controller = TextEditingController();
   List<Map<String, dynamic>> BLE_Werteliste = [];
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -168,6 +169,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
     });
   }
   void _sendPDFbar(){
+    final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
     FlutterForegroundTask.sendDataToTask({
       'event': 'pdferstellen',
       'Werteliste': BLE_Werteliste,
@@ -179,9 +181,11 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Tool': Tool,
       'Toleranz':Toleranz,
       'Einheit':"bar",
+      'Trans':lang,
     });
   }
   void _sendPDFPSI(){
+    final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
     FlutterForegroundTask.sendDataToTask({
       'event': 'pdferstellen',
       'Werteliste': BLE_Werteliste,
@@ -193,6 +197,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Tool': Tool,
       'Toleranz':Toleranz,
       'Einheit':"PSI",
+      'Trans':lang,
     });
   }
 
@@ -217,7 +222,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
 
               SizedBox(height: 24),
               Text(
-                "Bitte Schraubenzahl eingeben",
+                t.text('automatik1'),
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -229,7 +234,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
-                    labelText: "Anzahl Schrauben",
+                    labelText:t.text('automatik2'),
                   ),
                 ),
               ),
@@ -237,7 +242,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
 
               // Weiter Button
               AppButtons.primaryText(
-                text: "Bestätigen",
+                text: t.text('automatik3'),
                 onPressed: () {
                   if (_controller.text.isEmpty) return;
                   SCHRAUBENANZAHL = int.tryParse(_controller.text) ?? 0;
@@ -263,7 +268,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
 
               // Optional: Zurück Button (Navigation nur über Button)
               AppButtons.primaryText(
-                text: "Zurück",
+                text: t.text('zurueck'),
                 onPressed: () {
                   isrunning = false;
                   isaborted1 = false;
@@ -283,14 +288,14 @@ class _Autoscreenstate  extends State<Autoscreen> {
             children: [
               SizedBox(height: 24),
               Text(
-                isaborted1 ? 'Der Schraubvorgang wurde vom Nutzer abgebrochen ' : 'Schraubvorgang nach dem ersten Hub aufgrund der Festigkeitsprüfung abgebrochen',
+                isaborted1 ? t.text('automatik4') : t.text('automatik5'),
                 style: AppTextStyles.body,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
 
               AppButtons.primaryText(
-                text: isaborted1 ? 'Vorgang abgebrochen, Schraube ist fest' : 'Die Schraube war beim Start Lose',
+                text: isaborted1 ? t.text('automatik6') : t.text('automatik7'),
                 onPressed: () {
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
@@ -341,7 +346,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                 backgroundColor: AppColors.green,
               ),
               AppButtons.primaryText(
-                text: isaborted1 ? 'Vorgang abgebrochen, Schraube ist nicht fest' : 'Die Schraube war beim Start nicht Lose',
+                text: isaborted1 ? t.text('automatik8') : t.text('automatik9'),
                 onPressed: () {
                   markiereLetztenEintrag("NIO");
                   final now = DateTime.now();
@@ -373,7 +378,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
             children: [
               const SizedBox(height: 24),
               Text(
-                'Alle Schrauben angezogen, bitte zurück zum Hauptmenü',
+                t.text('automatik10'),
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body,
               ),
@@ -399,7 +404,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
               const SizedBox(height: 16),
 
               AppButtons.primaryText(
-                text: "Zurück",
+                text: t.text('zurueck'),
                 onPressed: () {
                   isrunning = false;
                   isaborted1 = false;
@@ -417,7 +422,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
           ?Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [AppButtons.primaryText(
-              text: "WARNUNG: Istdruck nicht in Toleranz, bitte erneut Anziehen oder Toleranz prüfen!",
+              text: t.text('automatik11'),
               backgroundColor: Colors.deepOrange,
               foregroundColor: Colors.black,
               onPressed: () {
@@ -448,7 +453,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
             children: [
               const SizedBox(height: 24),
               Text(
-                isrunning ? 'Verschrauben läuft...' : 'Bereit zum Verschrauben...',
+                isrunning ? t.text('automatik12') : t.text('automatik13'),
                 style: AppTextStyles.body,
                 textAlign: TextAlign.center,
               ),
@@ -461,21 +466,33 @@ class _Autoscreenstate  extends State<Autoscreen> {
                     : const FadingCircle()
               ),
               const SizedBox(width: 16), // Abstand zwischen Kreis und Text
-
-
-              Text(
-                'Schraube $akt_schraube von $SCHRAUBENANZAHL',
-                style: AppTextStyles.body
+              Text(t.textArgs(
+                'automatik15',
+                {
+                  'value': akt_schraube,
+                  'unit': SCHRAUBENANZAHL,
+                },
               ),
+                  style: AppTextStyles.body
+              ),
+
+
               const SizedBox(height: 16), // Abstand zwischen Text und Button
-              Text(
-                  DRUCK_EINHEIT=="PSI"?'Solldruck $SOLLDRUCKPSI PSI':'Solldruck: $SOLLDRUCKBAR Bar',
+              Text(t.textArgs(
+                'automatik14',
+                {
+                  'value': DRUCK_EINHEIT == "PSI"
+                      ? SOLLDRUCKPSI.toString()
+                      : SOLLDRUCKBAR.toString(),
+                  'unit': DRUCK_EINHEIT,
+                },
+              ),
                   style: AppTextStyles.body
               ),
               const SizedBox(height: 16),
 
               AppButtons.primaryText(
-                text: "Zurück",
+                text: t.text('zurueck'),
                 onPressed: () {
                   isrunning = false;
                   isaborted1 = false;

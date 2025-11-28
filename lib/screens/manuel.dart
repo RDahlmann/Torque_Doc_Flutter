@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import '../styles/app_text_styles.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
@@ -14,7 +15,7 @@ class Manuelscreen extends StatefulWidget {
 class _Manuelscreenstate  extends State<Manuelscreen> {
   // Beispiel: Hier können Controller oder Variablen für jeden Screen definiert werden
   late TextEditingController exampleController;
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -55,7 +56,7 @@ class _Manuelscreenstate  extends State<Manuelscreen> {
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
                   Text(
-                    "Zum Starten der Pumpe und Ausfahren des Zylinders den START-Taste drücken\nZum Einfahren des Zylinders START-Taste loslasse\nZum Stoppen der Pumpe STOP-Taste drücken",
+                    t.text('man1'),
                     style:AppTextStyles.body,textAlign: TextAlign.center,
                   ),
                 ],
@@ -66,7 +67,7 @@ class _Manuelscreenstate  extends State<Manuelscreen> {
 
               // Optional: Zurück Button (Navigation nur über Button)
               AppButtons.primaryText(
-                text: "Zurück",
+                text: t.text('zurueck'),
                 onPressed: () {
                   _sendCommand('-STOP\$');
                   Navigator.pop(context); // Zurück zum vorherigen Screen

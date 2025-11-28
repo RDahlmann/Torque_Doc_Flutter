@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import 'package:torquedoc/styles/app_text_styles.dart';
 import '../globals.dart';
 import '../styles/RotatingSignal.dart';
@@ -15,7 +16,7 @@ class Kalibrierscreen extends StatefulWidget {
 
 class _Kalibrierscreenstate extends State<Kalibrierscreen> {
   late TextEditingController exampleController;
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -74,9 +75,8 @@ class _Kalibrierscreenstate extends State<Kalibrierscreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      "Zum Kalibrieren Werkzeug von der Schraube lösen und Start gedrückt halten.\n Die Pumpe fährt den Druck langsam an und fügt drei Kontrollhübe durch",
-                      style:AppTextStyles.body,textAlign: TextAlign.center,
+                    Text(t.text('kal1'),
+                        style:AppTextStyles.body,textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -86,7 +86,7 @@ class _Kalibrierscreenstate extends State<Kalibrierscreen> {
               // 🔹 Weiter-Button (sichtbar, wenn kalibriert)
               if (iskalibriert)
                 AppButtons.primaryText(
-                  text: "Weiter",
+                  text: t.text('weiter'),
                   onPressed: () {
                     debugPrint("🔧 Kalibrierung weiter gedrückt -> pwm=$pwm, vorreferenzzeit=$vorreferenzzeit, referenzzeitkal=$referenzzeitkal");
                     Navigator.pushNamed(context, '/menu');
@@ -98,7 +98,7 @@ class _Kalibrierscreenstate extends State<Kalibrierscreen> {
 
               // 🔹 Zurück Button
               AppButtons.primaryText(
-                text: "Zurück",
+                text: t.text('zurueck'),
                 onPressed: () => Navigator.pop(context),
                 verticalPadding: 16,
               ),

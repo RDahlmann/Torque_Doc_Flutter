@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import '../globals.dart';
 import '../styles/app_text_styles.dart';
 import '../utils/app_toast.dart';
@@ -16,6 +17,7 @@ class pressurescreen extends StatefulWidget {
 class _pressurescreenstate extends State<pressurescreen> {
   late TextEditingController exampleController;
   late int _eingabe=0;
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -62,12 +64,12 @@ class _pressurescreenstate extends State<pressurescreen> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
                   labelText: isPSI
-                      ? "Druckeingabe ${ (150*14.5038).round() } PSI - ${ (650*14.5038).round() } PSI"
-                      : "Druckeingabe 150 Bar - 650 Bar",
-                  hintText: "Bitte geben Sie den Druck ein",
+                      ? t.text('pres2')
+                      : t.text('pres1'),
+                  hintText: t.text('pres3'),
                   suffixIcon: Padding(
                     padding: const EdgeInsets.only(right: 10),
-                    child: Text(isPSI ? "PSI" : "Bar", style: AppTextStyles.body),
+                    child: Text(isPSI ? "PSI" : "bar", style: AppTextStyles.body),
                   ),
                   suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
                   labelStyle: AppTextStyles.body,
@@ -96,8 +98,8 @@ class _pressurescreenstate extends State<pressurescreen> {
                   if (druckBar < 150 || druckBar > 650) {
                     AppToast.warning(
                         isPSI
-                            ? "Solldruck muss zwischen ${(150*14.5038).round()} und ${(650*14.5038).round()} PSI liegen"
-                            : "Solldruck muss zwischen 150 und 650 Bar liegen"
+                            ? t.text('pres5')
+                            : t.text('pres4')
                     );
                     SOLLDRUCK = 0;
                     return;
@@ -117,7 +119,7 @@ class _pressurescreenstate extends State<pressurescreen> {
               ),
 
               AppButtons.primaryText(
-                text: "Zurück",
+                text: t.text('zurueck'),
                 onPressed: () {
                   Navigator.pop(context);
                 },

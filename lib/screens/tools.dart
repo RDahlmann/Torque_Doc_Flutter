@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:torquedoc/globals.dart';
+import '../utils/translation.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/api_service.dart';
@@ -21,7 +23,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
   bool isLoading = false;
   String? errorMessage;
   double? interpolatedPressure;
-
+  late final t = Provider.of<Translations>(context);
   @override
   void initState() {
     super.initState();
@@ -91,7 +93,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     final code = customerCodeController.text.trim();
     if (code.length != 10) {
       setState(() {
-        errorMessage = "Kundencode muss 10-stellig sein!";
+        errorMessage = t.text('tools1');
       });
       return;
     }
@@ -120,7 +122,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
       });
     } catch (e) {
       setState(() {
-        errorMessage = "Fehler beim Laden der Tools:\n$e";
+        errorMessage = t.text('tools2');
       });
       debugPrint("[DEBUG] API error: $e");
     } finally {
@@ -206,8 +208,8 @@ class _Toolsscreenstate extends State<Toolsscreen> {
               TextField(
                 controller: torqueController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: "Drehmoment (Nm)",
+                decoration: InputDecoration(
+                  labelText: t.text('tools3'),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -215,15 +217,15 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
               // Weiter Button
               AppButtons.primaryText(
-                text: "Weiter",
+                text: t.text('weiter'),
                 onPressed: () {
                   if (selectedTool == null) return;
 
                   final inputTorque = double.tryParse(torqueController.text);
                   if (inputTorque == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Bitte gültiges Drehmoment eingeben")),
+                      SnackBar(
+                          content: Text(t.text('tools4'),)),
                     );
                     return;
                   }
@@ -236,10 +238,16 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                       : 0;
 
                   if (inputTorque < minTorque || inputTorque > maxTorque) {
+                    String errorText = t.textArgs(
+                        'tools5',
+                        {'minTorque': minTorque.toStringAsFixed(0),
+                          'maxTorque': maxTorque.toStringAsFixed(0),
+                        }  // ❌ Map, nicht nur String
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                           content: Text(
-                              "Fehler: Drehmoment außerhalb des Bereichs ($minTorque-$maxTorque Nm)")),
+                              errorText)),
                     );
                     setState(() {
                       interpolatedPressure = null;
@@ -251,11 +259,14 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                   interpolatePressure(selectedTool!, inputTorque);
 
                   if (pressure != null && (pressure < 150 || pressure > 650)) {
+                    String errorText = t.textArgs(
+                        'tools6',
+                        {'value': pressure.toStringAsFixed(2)}  // ❌ Map, nicht nur String
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                          content: Text(
-                              "Fehler: interpolierter Druckwert ${pressure.toStringAsFixed(2)} bar außerhalb des Bereichs (150-650 bar)")),
-                    );
+                          content: Text(errorText),
+                    ));
                     setState(() {
                       interpolatedPressure = null;
                     });
@@ -265,11 +276,14 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                     setState(() {
                       interpolatedPressure = pressure;
                     });
-
+                    String errorText = t.textArgs(
+                        'tools7',
+                        {'value': pressure?.toStringAsFixed(2)}  // ❌ Map, nicht nur String
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                           content: Text(
-                              "Interpolierter Druck: ${pressure?.toStringAsFixed(2)} bar")),
+                              errorText)),
                     );
                     final tool = selectedTool;
                     if (tool == null) return;
@@ -293,22 +307,10 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                 },
               ),
 
-              // Anzeige des interpolierten Druckwertes
-              if (interpolatedPressure != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    "Interpolierter Druckwert: ${interpolatedPressure!.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-              const SizedBox(height: 16),
 
               // Zurück Button
               AppButtons.primaryText(
-                text: "Zurück",
+                text: t.text('zurueck'),
                 onPressed: () => Navigator.pop(context),
                 verticalPadding: 16,
               ),
@@ -316,8 +318,8 @@ class _Toolsscreenstate extends State<Toolsscreen> {
               TextField(
                 controller: customerCodeController,
                 decoration: InputDecoration(
-                  labelText: "Kundencode",
-                  hintText: "10-stelliger Kundencode",
+                  labelText: t.text('tools8'),
+                  hintText: t.text('tools9'),
                   errorText: errorMessage,
                   border: OutlineInputBorder(),
                 ),
@@ -327,7 +329,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
               // Importieren Button
               AppButtons.primaryText(
-                text: "Importieren",
+                text: t.text('tools10'),
                 onPressed: _importTools,
                 verticalPadding: 16,
               ),
