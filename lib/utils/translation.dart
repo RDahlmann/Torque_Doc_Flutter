@@ -60,6 +60,8 @@ class Translations extends ChangeNotifier {
       'automatik13':'Bereit zum Verschrauben...',
       'automatik14':'Solldruck: {value} {unit}',
       'automatik15': 'Schraube {value} von {unit}',
+      'automatik16':'Es ist ein Fehler mit der Bluetooth Kommunikation aufgetreten,\n bitte bestätigen',
+      'automatik17':'Es ist ein Fehler an der Pumpe aufgetreten,\n bitte Bluettooth neu verbinden',
 
       'bt1':'Gerät verbunden!',
       'bt2':'Fehler!',
@@ -110,6 +112,8 @@ class Translations extends ChangeNotifier {
       'set8':'Seriennummer Schlauch',
       'set9':'Werkzeuge in Datenbank einpflegen',
       'set10':'Druckeinheit auswählen',
+      'set11':'Impressum',
+      'set12':'Datenschutz',
 
       'tools1':'Kundencode muss 10-stellig sein!',
       'tools2':'Fehler beim Laden der Tools',
@@ -187,6 +191,8 @@ class Translations extends ChangeNotifier {
       'automatik13': 'Ready for bolting...',
       'automatik14': 'Target pressure: {value} {unit}',
       'automatik15': 'Bolt {value} of {unit}',
+      'automatik16':  'An error has occurred with Bluetooth communication.\n Please confirm.',
+      'automatik17':'An error has occurred with the pump\n Please reconnect Bluetooth.',
 
       'bt1': 'Device connected!',
       'bt2': 'Error!',
@@ -241,6 +247,8 @@ class Translations extends ChangeNotifier {
       'set8': 'Hose serial number',
       'set9': 'Add tools to database',
       'set10':'Select pressure unit',
+      'set11':'Legal Notices',
+      'set12':'Privacy Notices',
 
       'tools1': 'Customer code must be 10 digits!',
       'tools2': 'Error loading tools',

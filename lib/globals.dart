@@ -37,8 +37,11 @@ bool iscomplete=false;
 bool isaborted1=false;
 bool isaborted2=false;
 bool isnotintol=false;
+bool isnotconnected=false;
 int akt_schraube=0;
 int SCHRAUBENANZAHL=0;
+bool isdisconnect=false;
+List<Map<String, dynamic>> BLE_WertelisteGlobal = [];
 
 //BLE
 String Geraetename="";

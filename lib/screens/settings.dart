@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../globals.dart';
 import '../utils/translation.dart';
 import '../widgets/app_template.dart';
@@ -24,6 +25,42 @@ class _SettingsscreenState extends State<Settingsscreen>{
           children: [
             SizedBox(height: 24),
 
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // 🔸 Impressum
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey.shade300,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onPressed: () {
+                    launchUrl(Uri.parse("https://www.stephandahlmann.com/impressum"));
+                  },
+                  child: Text(
+                    t.text('set11'),
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+
+                // 🔸 Datenschutz
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey.shade300,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onPressed: () {
+                    launchUrl(Uri.parse("https://www.stephandahlmann.com/datenschutz"));
+                  },
+                  child: Text(
+                    t.text('set12'),
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
             // 🔹 Sprache
             Text(t.text('set1'), style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 8),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
+import 'package:torquedoc/main.dart';
 import 'package:torquedoc/styles/RotatingSignal.dart';
 import 'package:torquedoc/styles/app_text_styles.dart';
 import '../styles/FadingCircle.dart';
@@ -10,6 +11,7 @@ import '../widgets/app_buttons.dart';
 import '../utils/translation.dart';
 import '../globals.dart';
 import '../styles/app_colors.dart';
+import 'bluetooth_screen.dart';
 
 class Autoscreen extends StatefulWidget {
 
@@ -31,8 +33,31 @@ class _Autoscreenstate  extends State<Autoscreen> {
     FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
   }
 
-  void _handleTaskData(dynamic data) {
-    if (!mounted) return;
+  Future<void> _handleTaskData(dynamic data) async {
+
+    if (data is Map && data['event'] == 'statedisconnected') {
+      debugPrint("⚠️ BLE disconnected → Foreground task stoppen");
+      if (!isdisconnect){
+        isdisconnect=true;
+        await FlutterForegroundTask.stopService();
+        setState(() {
+          isrunning = false;
+          isaborted1 = false;
+          isaborted2 = false;
+          iscomplete = false;
+          isnotintol = false;
+          isfehler = false;
+          isnotconnected = true;
+
+        });
+      }
+
+
+      // Task stoppen
+
+
+      // Optional: UI anzeigen, dass Maschine Strom benötigt
+    }
     if (data is Map && data['event'] == 'laeuft') {
       setState(() {
         isrunning = true;
@@ -40,6 +65,21 @@ class _Autoscreenstate  extends State<Autoscreen> {
         isaborted2=false;
         iscomplete=false;
         isnotintol=false;
+        isfehler=false;
+        isnotconnected=false;
+        isdisconnect=false;
+      });
+    }
+    if (data is Map && data['event'] == 'fehler') {
+      setState(() {
+        isrunning = false;
+        isaborted1=false;
+        isaborted2=false;
+        iscomplete=false;
+        isnotintol=false;
+        isfehler=true;
+        isnotconnected=false;
+        isdisconnect=false;
       });
     }
     if (data is Map && data['event'] == 'abgebrochen1') {
@@ -54,6 +94,9 @@ class _Autoscreenstate  extends State<Autoscreen> {
         isaborted2=false;
         iscomplete=false;
         isnotintol=false;
+        isfehler=false;
+        isnotconnected=false;
+        isdisconnect=false;
         _sendCommand('-STOP\$');
       });
     }
@@ -69,6 +112,9 @@ class _Autoscreenstate  extends State<Autoscreen> {
         isaborted2=true;
         iscomplete=false;
         isnotintol=false;
+        isfehler=false;
+        isnotconnected=false;
+        isdisconnect=false;
         _sendCommand('-STOP\$');
       });
     }
@@ -88,6 +134,9 @@ class _Autoscreenstate  extends State<Autoscreen> {
             isaborted2=false;
             iscomplete=true;
             isnotintol=false;
+            isfehler=false;
+            isnotconnected=false;
+            isdisconnect=false;
             _sendCommand('-STOP\$');
           }else
           {
@@ -96,6 +145,9 @@ class _Autoscreenstate  extends State<Autoscreen> {
             isaborted2=false;
             iscomplete=false;
             isnotintol=false;
+            isfehler=false;
+            isnotconnected=false;
+            isdisconnect=false;
           }
         });
         }
@@ -107,6 +159,9 @@ class _Autoscreenstate  extends State<Autoscreen> {
             isaborted2=false;
             iscomplete=false;
             isnotintol=true;
+            isfehler=false;
+            isnotconnected=false;
+            isdisconnect=false;
             _sendCommand('-STOP\$');
           });
 
@@ -144,11 +199,12 @@ class _Autoscreenstate  extends State<Autoscreen> {
         BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKPSI;
         BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] =
             (BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] * 14.503).round();
-
+        BLE_WertelisteGlobal.add(Map<String, dynamic>.from(BLE_Werteliste.last));
         _sendPDFPSI();
         setState(() {});
       }else{
         BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKBAR;
+        BLE_WertelisteGlobal.add(Map<String, dynamic>.from(BLE_Werteliste.last));
         _sendPDFbar();
         setState(() {});
       }
@@ -172,7 +228,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
     final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
     FlutterForegroundTask.sendDataToTask({
       'event': 'pdferstellen',
-      'Werteliste': BLE_Werteliste,
+      'Werteliste': BLE_WertelisteGlobal,
       'Projectnumber': Projectnumber,
       'UserName': UserName,
       'Serialpump': Serialpump,
@@ -188,7 +244,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
     final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
     FlutterForegroundTask.sendDataToTask({
       'event': 'pdferstellen',
-      'Werteliste': BLE_Werteliste,
+      'Werteliste': BLE_WertelisteGlobal,
       'Projectnumber': Projectnumber,
       'UserName': UserName,
       'Serialpump': Serialpump,
@@ -275,6 +331,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted2 = false;
                   iscomplete = false;
                   isnotintol=false;
+                  isfehler=false;
+                  isnotconnected=false;
                   _sendCommand('-STOP\$');
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },
@@ -309,6 +367,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                         isaborted2=false;
                         iscomplete=true;
                         isnotintol=false;
+                        isfehler=false;
+                        isnotconnected=false;
                         _sendCommand('-STOP\$');
 
                       }else
@@ -318,6 +378,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                         isaborted2=false;
                         iscomplete=false;
                         isnotintol=false;
+                        isfehler=false;
+                        isnotconnected=false;
                         if(Automatik){
                           _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
                         }
@@ -336,6 +398,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                       isaborted2=false;
                       iscomplete=false;
                       isnotintol=true;
+                      isfehler=false;
+                      isnotconnected=false;
                       _sendCommand('-STOP\$');
                     });
                   }
@@ -358,6 +422,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                     isaborted2=false;
                     iscomplete=false;
                     isnotintol=false;
+                    isfehler=false;
+                    isnotconnected=false;
                     if(Automatik){
                       _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
                     }
@@ -411,11 +477,44 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted2 = false;
                   iscomplete = false;
                   isnotintol=false;
+                  isfehler=false;
+                  isnotconnected=false;
                   _sendCommand('-STOP\$');
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },
                 verticalPadding: 16,
               ),
+            ],
+          )
+              : (isfehler)
+              ? Column( crossAxisAlignment: CrossAxisAlignment.center,
+            children: [AppButtons.primaryText(
+              text: t.text('automatik16'),
+              backgroundColor: Colors.deepOrange,
+              foregroundColor: Colors.black,
+              onPressed: () {
+                setState(() {
+                  isrunning = false;
+                  isaborted1 = false;
+                  isaborted2 = false;
+                  iscomplete = false;
+                  isnotintol=false;
+                  isfehler=false;
+                  isnotconnected=false;
+                  final now = DateTime.now();
+                  final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
+
+                  if(Automatik){
+                    _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                  }
+                  else{
+                    _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                  }
+                });
+
+              },
+              verticalPadding: 16,
+            ),
             ],
           )
           :(isnotintol)
@@ -432,6 +531,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted2 = false;
                   iscomplete = false;
                   isnotintol=false;
+                  isfehler=false;
+                  isnotconnected=false;
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 
@@ -441,6 +542,38 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   else{
                     _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
                   }
+                });
+
+              },
+              verticalPadding: 16,
+            ),
+            ],
+          )
+              :(isnotconnected)
+              ?Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [AppButtons.primaryText(
+              text: t.text('automatik17'),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              onPressed: () {
+                setState(() {
+                  isrunning = false;
+                  isaborted1 = false;
+                  isaborted2 = false;
+                  iscomplete = false;
+                  isnotintol=false;
+                  isfehler=true;
+                  isnotconnected=false;
+                  startBleTask();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BluetoothScreen(isInitialScreen: false),
+                    ),
+                  );
+
+
                 });
 
               },
@@ -499,6 +632,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isaborted2 = false;
                   iscomplete = false;
                   isnotintol=false;
+                  isfehler=false;
+                  isnotconnected=false;
                   _sendCommand('-STOP\$');
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },
