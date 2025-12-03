@@ -151,6 +151,7 @@ class Translations extends ChangeNotifier {
       'pdf4':'Solldrehmoment [Nm]',
       'pdf5':'Istdrehmoment [Nm]',
       'pdf6':'Datum',
+      'pdf7':'Messwerte',
 
       'name': 'Name',
       'project': 'Projektnummer',
@@ -288,6 +289,8 @@ class Translations extends ChangeNotifier {
       'pdf4':'Target torque [{Value}]',
       'pdf5':'Actual torque [{Value}]',
       'pdf6':'Date',
+      'pdf7':'Measurements',
+
 
       'name': 'Name',
       'project': 'Project number',

@@ -257,7 +257,7 @@ class FileExporter {
           pw.SizedBox(height: 12),
 
           // Messwerte Tabelle
-          pw.Text("Messwerte", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.Text(t.text('pdf7'), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 12),
           pw.Table(
             border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
