@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../main.dart';
 import '../utils/ble_foreground_task.dart';
 import '../screens/bluetooth_screen.dart';
 import '../utils/translation.dart';
@@ -69,7 +70,9 @@ class _AppTemplateState extends State<AppTemplate> {
                   Expanded(
                     child: Center(
                       child: GestureDetector(
-                        onTap: () {
+                        onTap: () async {
+                          await FlutterForegroundTask.stopService();
+                          startBleTask();
                           Navigator.push(
                             context,
                             MaterialPageRoute(

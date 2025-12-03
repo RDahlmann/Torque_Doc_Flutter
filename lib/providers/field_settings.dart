@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:torquedoc/globals.dart';
 
 class FieldSettings extends ChangeNotifier {
   // Pflichtfelder
@@ -12,6 +13,9 @@ class FieldSettings extends ChangeNotifier {
   // Modus
   bool automatik = true;
 
+  //Export
+  bool csv=true;
+  bool pdf=true;
   // Sprache
   String language = 'de';
 
@@ -45,8 +49,22 @@ class FieldSettings extends ChangeNotifier {
   // Modus setzen
   void setAutomatik(bool value) {
     automatik = value;
+    Automatik=value;
     notifyListeners();
     _saveBool('automatik', value);
+  }
+
+  void setPDF(bool value) {
+    pdf = value;
+    ISPDF=value;
+    notifyListeners();
+    _saveBool('ispdf', value);
+  }
+  void setCSV(bool value) {
+    csv = value;
+    ISCSV=value;
+    notifyListeners();
+    _saveBool('iscsv', value);
   }
 
   // Sprache setzen
@@ -75,6 +93,9 @@ class FieldSettings extends ChangeNotifier {
     requireSerialPump = prefs.getBool('requireSerialPump') ?? false;
     requireSerialTool = prefs.getBool('requireSerialTool') ?? false;
     requireSerialHose = prefs.getBool('requireSerialHose') ?? false;
+    automatik = prefs.getBool('automatik') ?? true;
+    pdf = prefs.getBool('ispdf') ?? true;
+    csv = prefs.getBool('iscsv') ?? true;
     automatik = prefs.getBool('automatik') ?? true;
     language = prefs.getString('language') ?? 'de';
     notifyListeners();

@@ -88,6 +88,8 @@ class _Kalibrierscreenstate extends State<Kalibrierscreen> {
                 AppButtons.primaryText(
                   text: t.text('weiter'),
                   onPressed: () {
+                    akt_schraube=1;
+                    isSchrauben=false;
                     debugPrint("🔧 Kalibrierung weiter gedrückt -> pwm=$pwm, vorreferenzzeit=$vorreferenzzeit, referenzzeitkal=$referenzzeitkal");
                     Navigator.pushNamed(context, '/menu');
                   },

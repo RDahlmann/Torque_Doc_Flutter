@@ -14,6 +14,7 @@ String Tool="";
 
 //Einheitsauswahl
 String DRUCK_EINHEIT = "Bar"; // default
+String DREHMOMENT_EINHEIT = "Nm"; // default
 
 //Empfangsvariablen
 int? pwm;
@@ -27,6 +28,10 @@ int? solldruck;
 int SOLLDRUCK=0;
 int SOLLDRUCKBAR=0;
 int SOLLDRUCKPSI=0;
+int SOLLDREHMOMENT=0;
+int SOLLDREHMOMENTNM=0;
+int SOLLDREHMOMENTFTLBS=0;
+
 //Zustandsvariablen
 bool Automatik = true;
 bool isfehler=false;
@@ -38,10 +43,13 @@ bool isaborted1=false;
 bool isaborted2=false;
 bool isnotintol=false;
 bool isnotconnected=false;
+bool ISCSV=false;
+bool ISPDF=false;
 int akt_schraube=0;
 int SCHRAUBENANZAHL=0;
 bool isdisconnect=false;
 List<Map<String, dynamic>> BLE_WertelisteGlobal = [];
+
 
 //BLE
 String Geraetename="";
@@ -54,15 +62,30 @@ Future<void> loadSettings() async {
   Automatik = prefs.getBool('Automatik') ?? true;
   currentLanguage = prefs.getString('language') ?? 'en';
   DRUCK_EINHEIT = prefs.getString('druckEinheit') ?? 'Bar'; // neue Zeile
+  DREHMOMENT_EINHEIT=prefs.getString('drehmomentEinheit')??'Nm';
+  ISCSV=prefs.getBool('iscsv')??true;
+  ISPDF=prefs.getBool('ispdf')??true;
 }
 
 Future<void> saveSettings() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool('Automatik', Automatik);
+  await prefs.setBool('iscsv', ISCSV);
+  await prefs.setBool('ispdf', ISPDF);
   await prefs.setString('language', currentLanguage);
   await prefs.setString('druckEinheit', DRUCK_EINHEIT); // neue Zeile
+  await prefs.setString('drehmomentEinheit', DREHMOMENT_EINHEIT); // neue Zeile
 }
 
 BluetoothDevice? bleDeviceForService;
 
+int convertTorqueToNm(int value) {
+  if (DREHMOMENT_EINHEIT == "Nm") return value;
+  return (value / 0.737562149).round(); // ft.lbs → Nm
+}
+
+int convertNmToSelected(int value) {
+  if (DREHMOMENT_EINHEIT == "Nm") return value;
+  return (value * 0.737562149).round(); // Nm → ft.lbs
+}
 

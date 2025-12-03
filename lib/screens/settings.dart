@@ -109,7 +109,17 @@ class _SettingsscreenState extends State<Settingsscreen>{
                 ),
               ],
             ),
-
+            Text(t.text('set14'), style: TextStyle(fontWeight: FontWeight.bold)),
+            CheckboxListTile(
+                title: Text("CSV"),
+                value: fields.csv,
+                onChanged: (val) => fields.setCSV(val!)
+            ),
+            CheckboxListTile(
+              title: Text("PDF"),
+              value: fields.pdf,
+              onChanged: (val) => fields.setPDF(val!)
+            ),
             SizedBox(height: 24),
             Text(t.text('set10'), style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
@@ -122,6 +132,24 @@ class _SettingsscreenState extends State<Settingsscreen>{
                 onChanged: (val) async {
                   if (val != null) {
                     DRUCK_EINHEIT = val;
+                    await saveSettings(); // Speichert die Auswahl in SharedPreferences
+                    setState(() {});
+                  }
+                },
+              ),
+            ),
+            SizedBox(height: 24),
+            Text(t.text('set13'), style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Center(
+              child: DropdownButton<String>(
+                value: DREHMOMENT_EINHEIT,
+                items: ['Nm', 'Ft Lbs.']
+                    .map((unit) => DropdownMenuItem(value: unit, child: Text(unit)))
+                    .toList(),
+                onChanged: (val) async {
+                  if (val != null) {
+                    DREHMOMENT_EINHEIT = val;
                     await saveSettings(); // Speichert die Auswahl in SharedPreferences
                     setState(() {});
                   }

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +8,8 @@ import '../main.dart';
 import '../utils/translation.dart';
 import '../widgets/app_buttons.dart';
 import '../widgets/app_template.dart';
-import '../styles/app_text_styles.dart';
+
+import 'package:permission_handler/permission_handler.dart';
 
 class DeviceData {
   final String id;
@@ -29,6 +33,53 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   DeviceData? selectedDevice;
   bool isConnected = false;
   late final t = Provider.of<Translations>(context);
+  Future<bool> ensureBlePermissions() async {
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      final sdkInt = androidInfo.version.sdkInt ?? 0;
+
+      Map<Permission, PermissionStatus> statuses;
+
+      if (sdkInt >= 31) {
+        // Android 12+
+        statuses = await [
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.locationWhenInUse,
+        ].request();
+      } else {
+        // Android <12
+        statuses = await [
+          Permission.bluetooth,
+          Permission.locationWhenInUse,
+        ].request();
+      }
+
+      return statuses.values.every((s) => s.isGranted);
+    }
+
+    // iOS fragt automatisch
+    return true;
+  }
+
+  Future<void> _startBleService() async {
+    final granted = await ensureBlePermissions();
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('BLE-Permissions benötigt!')),
+      );
+      return;
+    }
+
+    // Foreground BLE-Service starten
+    await FlutterForegroundTask.startService(
+      notificationTitle: 'BLE Service',
+      notificationText: 'Scanning for devices...',
+      callback: startBleTask,
+    );
+    debugPrint("[BLE_SCREEN] Foreground BLE service started");
+  }
   @override
   void initState() {
     super.initState();
@@ -38,12 +89,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     FlutterForegroundTask.initCommunicationPort();
     FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
 
-    // Foreground BLE-Service starten
-    FlutterForegroundTask.startService(
-      notificationTitle: 'BLE Service',
-      notificationText: 'Scanning for devices...',
-      callback: startBleTask,
-    ).then((_) => debugPrint("[BLE_SCREEN] Foreground BLE service started"));
+    _startBleService();
   }
 
   void _handleTaskData(dynamic data) {

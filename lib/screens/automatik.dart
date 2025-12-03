@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
@@ -5,13 +8,14 @@ import 'package:torquedoc/main.dart';
 import 'package:torquedoc/styles/RotatingSignal.dart';
 import 'package:torquedoc/styles/app_text_styles.dart';
 import '../styles/FadingCircle.dart';
-import '../utils/file_exporter.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../utils/translation.dart';
 import '../globals.dart';
 import '../styles/app_colors.dart';
 import 'bluetooth_screen.dart';
+
+import 'package:permission_handler/permission_handler.dart';
 
 class Autoscreen extends StatefulWidget {
 
@@ -25,6 +29,76 @@ class _Autoscreenstate  extends State<Autoscreen> {
   final TextEditingController _controller = TextEditingController();
   List<Map<String, dynamic>> BLE_Werteliste = [];
   late final t = Provider.of<Translations>(context);
+  Future<void> _startBleService() async {
+    final granted = await ensureBlePermissions();
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('BLE-Permissions benötigt!')),
+      );
+      return;
+    }
+
+    await FlutterForegroundTask.startService(
+      notificationTitle: 'BLE Service',
+      notificationText: 'Scanning for devices...',
+      callback: startBleTask,
+    );
+    debugPrint("[AUTO_SCREEN] Foreground BLE service started");
+  }
+  Future<bool> ensureBlePermissions() async {
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      final sdkInt = androidInfo.version.sdkInt ?? 0;
+
+      Map<Permission, PermissionStatus> statuses;
+
+      if (sdkInt >= 31) {
+        statuses = await [
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.locationWhenInUse,
+        ].request();
+      } else {
+        statuses = await [
+          Permission.bluetooth,
+          Permission.locationWhenInUse,
+        ].request();
+      }
+
+      return statuses.values.every((s) => s.isGranted);
+    }
+    return true; // iOS fragt automatisch
+  }
+
+  Future<bool> ensureStoragePermission() async {
+    if (Platform.isAndroid) {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      final sdkInt = androidInfo.version.sdkInt ?? 0;
+
+      Map<Permission, PermissionStatus> statuses;
+
+      if (sdkInt >= 33) {
+        // Android 13+ braucht nur Medienzugriff, keinen Full Storage
+        statuses = await [Permission.photos, Permission.videos].request();
+      } else if (sdkInt >= 30) {
+        // Android 11+ evtl. MANAGE_EXTERNAL_STORAGE
+        statuses = await [Permission.manageExternalStorage].request();
+      } else {
+        // Android <11
+        statuses = await [Permission.storage].request();
+      }
+
+      return statuses.values.every((s) => s.isGranted);
+    }
+
+    // iOS fragt automatisch
+    return true;
+  }
+
+
+
   @override
   void initState() {
     super.initState();
@@ -192,29 +266,52 @@ class _Autoscreenstate  extends State<Autoscreen> {
   }
 
   void markiereLetztenEintrag(String status) {
-    if (BLE_Werteliste.isNotEmpty) {
-      BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = akt_schraube;
-      BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = status;
-      if(DRUCK_EINHEIT=='PSI'){
-        BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKPSI;
-        BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] =
-            (BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] * 14.503).round();
-        BLE_WertelisteGlobal.add(Map<String, dynamic>.from(BLE_Werteliste.last));
-        _sendPDFPSI();
-        setState(() {});
-      }else{
-        BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = SOLLDRUCKBAR;
-        BLE_WertelisteGlobal.add(Map<String, dynamic>.from(BLE_Werteliste.last));
-        _sendPDFbar();
-        setState(() {});
-      }
+    if (BLE_Werteliste.isEmpty) return;
 
+    final last = BLE_Werteliste.last;
 
+    last["Nr."] = akt_schraube;
+    last["IO"] = status;
 
+    // Drehmoment umrechnen, falls vorhanden
+    final dynamic sollTorqueRaw = last["Solldrehmoment"];
+    final dynamic nennTorqueRaw = last["Nenndrehmoment"];
 
-      // 🔹 Direkt PDF exportieren, nachdem geändert
+    last["Solldrehmoment"] = (sollTorqueRaw is int)
+        ? (DREHMOMENT_EINHEIT == "Nm" ? sollTorqueRaw : convertNmToSelected(sollTorqueRaw))
+        : "-";
 
+    last["Nenndrehmoment"] = (nennTorqueRaw is int)
+        ? (DREHMOMENT_EINHEIT == "Nm" ? nennTorqueRaw : convertNmToSelected(nennTorqueRaw))
+        : "-";
+
+    // Druck umrechnen
+    if (DRUCK_EINHEIT == 'PSI') {
+      last["Solldruck"] = SOLLDRUCKPSI;
+      last["Nenndruck"] = (last["Nenndruck"] * 14.503).round();
+    } else {
+      last["Solldruck"] = SOLLDRUCKBAR;
     }
+
+    BLE_WertelisteGlobal.add(Map<String, dynamic>.from(last));
+
+    // Export auslösen
+    if (ISCSV) {
+      if (DRUCK_EINHEIT == 'PSI') {
+        _sendCSVPSI();
+      } else {
+        _sendCSVbar();
+      }
+    }
+    if (ISPDF) {
+      if (DRUCK_EINHEIT == 'PSI') {
+        _sendPDFPSI();
+      } else {
+        _sendPDFbar();
+      }
+    }
+
+    setState(() {});
   }
   /// PDF Export aufrufen
   void _sendCommand(String cmd) {
@@ -224,7 +321,14 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'command': cmd,
     });
   }
-  void _sendPDFbar(){
+  Future<void> _sendPDFbar() async {
+    final granted = await ensureStoragePermission();
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Speicher-Permission benötigt, um PDF zu erstellen!')),
+      );
+      return;
+    }
     final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
     FlutterForegroundTask.sendDataToTask({
       'event': 'pdferstellen',
@@ -237,10 +341,19 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Tool': Tool,
       'Toleranz':Toleranz,
       'Einheit':"bar",
+      'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
       'Trans':lang,
+
     });
   }
-  void _sendPDFPSI(){
+  Future<void> _sendPDFPSI() async {
+    final granted = await ensureStoragePermission();
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Speicher-Permission benötigt, um PDF zu erstellen!')),
+      );
+      return;
+    }
     final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
     FlutterForegroundTask.sendDataToTask({
       'event': 'pdferstellen',
@@ -253,6 +366,57 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Tool': Tool,
       'Toleranz':Toleranz,
       'Einheit':"PSI",
+      'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
+      'Trans':lang,
+    });
+  }
+
+  Future<void> _sendCSVbar() async {
+    final granted = await ensureStoragePermission();
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Speicher-Permission benötigt, um CSV zu erstellen!')),
+      );
+      return;
+    }
+    final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'csverstellen',
+      'Werteliste': BLE_WertelisteGlobal,
+      'Projectnumber': Projectnumber,
+      'UserName': UserName,
+      'Serialpump': Serialpump,
+      'Serialhose': Serialhose,
+      'Serialtool': Serialtool,
+      'Tool': Tool,
+      'Toleranz':Toleranz,
+      'Einheit':"bar",
+      'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
+      'Trans':lang,
+
+    });
+  }
+  Future<void> _sendCSVPSI() async {
+    final granted = await ensureStoragePermission();
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Speicher-Permission benötigt, um CSV zu erstellen!')),
+      );
+      return;
+    }
+    final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'csverstellen',
+      'Werteliste': BLE_WertelisteGlobal,
+      'Projectnumber': Projectnumber,
+      'UserName': UserName,
+      'Serialpump': Serialpump,
+      'Serialhose': Serialhose,
+      'Serialtool': Serialtool,
+      'Tool': Tool,
+      'Toleranz':Toleranz,
+      'Einheit':"PSI",
+      'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
       'Trans':lang,
     });
   }
@@ -307,10 +471,10 @@ class _Autoscreenstate  extends State<Autoscreen> {
                     final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 
                     if(Automatik){
-                         _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                         _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                     }
                     else{
-                      _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                      _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                     }
 
                     setState(() {
@@ -353,7 +517,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
               const SizedBox(height: 16),
 
               AppButtons.primaryText(
-                text: isaborted1 ? t.text('automatik6') : t.text('automatik7'),
+                text: isaborted2 ? t.text('automatik6') : t.text('automatik7'),
                 onPressed: () {
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
@@ -381,10 +545,10 @@ class _Autoscreenstate  extends State<Autoscreen> {
                         isfehler=false;
                         isnotconnected=false;
                         if(Automatik){
-                          _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                          _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                         }
                         else{
-                          _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                          _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                         }
                       }
                     }
@@ -410,7 +574,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                 backgroundColor: AppColors.green,
               ),
               AppButtons.primaryText(
-                text: isaborted1 ? t.text('automatik8') : t.text('automatik9'),
+                text: isaborted2 ? t.text('automatik8') : t.text('automatik9'),
                 onPressed: () {
                   markiereLetztenEintrag("NIO");
                   final now = DateTime.now();
@@ -425,10 +589,10 @@ class _Autoscreenstate  extends State<Autoscreen> {
                     isfehler=false;
                     isnotconnected=false;
                     if(Automatik){
-                      _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                      _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                     }
                     else{
-                      _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                      _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                     }
                   });
                 },
@@ -479,7 +643,9 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isnotintol=false;
                   isfehler=false;
                   isnotconnected=false;
+                  isSchrauben = false;
                   _sendCommand('-STOP\$');
+                  akt_schraube=1;
                   Navigator.pop(context); // Zurück zum vorherigen Screen
                 },
                 verticalPadding: 16,
@@ -505,10 +671,10 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 
                   if(Automatik){
-                    _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                    _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                   }
                   else{
-                    _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                    _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                   }
                 });
 
@@ -537,10 +703,10 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 
                   if(Automatik){
-                    _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                    _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                   }
                   else{
-                    _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $SCHRAUBENANZAHL\$');
+                    _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                   }
                 });
 
@@ -565,7 +731,8 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   isnotintol=false;
                   isfehler=true;
                   isnotconnected=false;
-                  startBleTask();
+                  _startBleService();
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(

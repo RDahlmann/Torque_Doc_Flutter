@@ -57,13 +57,26 @@ class _Menuscreenstate  extends State<Menuscreen> {
               AppButtons.primaryText(
                 text: t.text('menu1'),
                 onPressed: () {
-                  isSchrauben=false;
-                  akt_schraube=1;
-                  iscomplete=false;
+                  iscomplete = false;
                   isaborted1 = false;
                   isaborted2 = false;
+
+                  final now = DateTime.now();
+                  final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
+
+                  if (!isSchrauben) {
+                    // Standard-Fall: Schraubenanzahl noch nicht eingegeben
+
+                    _sendCommand('-STOP\$');
+                  } else {
+                    // Automatik-Modus: Schrauben laufen bereits
+                    if (Automatik) {
+                      _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
+                    } else {
+                      _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
+                    }
+                  }
                   Navigator.pushNamed(context, '/auto');
-                  _sendCommand('-STOP\$');
                 },
                 verticalPadding: 16,
               ),

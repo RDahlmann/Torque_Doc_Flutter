@@ -1,13 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:provider/provider.dart';
 import 'package:torquedoc/utils/translation.dart';
 import '../globals.dart';
 import 'file_exporter.dart';
-import 'dart:typed_data';
-import 'dart:convert'; // für base64Decode
+import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+
 
 
 
@@ -21,11 +22,19 @@ bool istorque=false;
 int solltorque=0;
 int nenntorque=0;
 class BleForegroundTask extends TaskHandler {
+
+
+
+
   final List<BluetoothDevice> devices = [];
   BluetoothDevice? connectedDevice;
   BluetoothCharacteristic? writeCharacteristic;
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter taskStarter) async {
+
+// erst jetzt Scan starten
+    FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+
     debugPrint("[BLE_TASK] onStart at $timestamp");
     debugPrint("[BLE_TASK] Starting BLE scan...");
 
@@ -114,8 +123,8 @@ class BleForegroundTask extends TaskHandler {
              if(!istorque){
                final eintrag = {
                  "Nr.": schraubennummer,
-                 "Solldruck": druckmax,
-                 "Nenndruck": solldruck,
+                 "Solldruck": solldruck,
+                 "Nenndruck": druckmax,
                  "Solldrehmoment": "-",
                  "Nenndrehmoment":"-",
                  "IO":"OK",
@@ -128,8 +137,8 @@ class BleForegroundTask extends TaskHandler {
                final eintrag = {
 
                  "Nr.": schraubennummer,
-                 "Solldruck": druckmax,
-                 "Nenndruck": solldruck,
+                 "Solldruck": solldruck,
+                 "Nenndruck": druckmax,
                  "Solldrehmoment":solltorque,
                  "Nenndrehmoment":nenntorque,
                  "IO":"IO",
@@ -151,9 +160,9 @@ class BleForegroundTask extends TaskHandler {
               if(!istorque){
                 final eintrag = {
                   "Nr.": schraubennummer,
-                  "Solldruck": druckmax,
-                  "Nenndruck": solldruck,
-                  "Solldrehmoment": "=",
+                  "Solldruck": solldruck,
+                  "Nenndruck": druckmax,
+                  "Solldrehmoment": "-",
                   "Nenndrehmoment":"-",
                   "IO":"IO",
                 };
@@ -166,8 +175,8 @@ class BleForegroundTask extends TaskHandler {
                 final eintrag = {
 
                   "Nr.": schraubennummer,
-                  "Solldruck": druckmax,
-                  "Nenndruck": solldruck,
+                  "Solldruck": solldruck,
+                  "Nenndruck": druckmax,
                   "Solldrehmoment":solltorque,
                   "Nenndrehmoment":nenntorque,
                   "IO":"IO",
@@ -187,8 +196,8 @@ class BleForegroundTask extends TaskHandler {
               if(!istorque){
                 final eintrag = {
                   "Nr.": schraubennummer,
-                  "Solldruck": druckmax,
-                  "Nenndruck": solldruck,
+                  "Solldruck": solldruck,
+                  "Nenndruck": druckmax,
                   "Solldrehmoment":"-",
                   "Nenndrehmoment":"-",
                   "IO":"IO",
@@ -201,8 +210,8 @@ class BleForegroundTask extends TaskHandler {
                 final eintrag = {
 
                   "Nr.": schraubennummer,
-                  "Solldruck": druckmax,
-                  "Nenndruck": solldruck,
+                  "Solldruck": solldruck,
+                  "Nenndruck": druckmax,
                   "Solldrehmoment":solltorque,
                   "Nenndrehmoment":nenntorque,
                   "IO":"IO",
@@ -418,12 +427,15 @@ class BleForegroundTask extends TaskHandler {
         final String tool = data['Tool'] ?? '';
         final String toleranz=data['Toleranz']??'';
         final String einheit=data['Einheit']??'';
+        final String einheitd=data['EinheitD']??'';
 
         // ---- Werteliste aktualisieren ----
         if (werteliste.isNotEmpty && BLE_Werteliste.isNotEmpty) {
           BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = werteliste[werteliste.length - 1]["Nr."];
           BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = werteliste[werteliste.length - 1]["Solldruck"];
           BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] = werteliste[werteliste.length - 1]["Nenndruck"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Solldrehmoment"] = werteliste[werteliste.length - 1]["Solldrehmoment"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndrehmoment"] = werteliste[werteliste.length - 1]["Nenndrehmoment"];
           BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = werteliste[werteliste.length - 1]["IO"];
         }
         final t = Translations()..setLocale(data['Trans']);
@@ -439,6 +451,7 @@ class BleForegroundTask extends TaskHandler {
           tool: tool,
           toleranz: toleranz,
           Einheit: einheit,
+          EinheitD: einheitd,
         );
 
         debugPrint('[FOREGROUND TASK] PDF erstellt: $filePath');
@@ -456,7 +469,60 @@ class BleForegroundTask extends TaskHandler {
       }
 
     }
+    if (data is Map && data['event'] == 'csverstellen') {
+      try {
+        // ---- Daten extrahieren ----
+        final List<Map<String, dynamic>> werteliste = List<Map<String, dynamic>>.from(data['Werteliste']);
+        final String projectVar = data['Projectnumber'] ?? '';
+        final String userName = data['UserName'] ?? '';
+        final String serialPump = data['Serialpump'] ?? '';
+        final String serialHose = data['Serialhose'] ?? '';
+        final String serialTool = data['Serialtool'] ?? '';
+        final String tool = data['Tool'] ?? '';
+        final String toleranz=data['Toleranz']??'';
+        final String einheit=data['Einheit']??'';
+        final String einheitd=data['EinheitD']??'';
 
+        // ---- Werteliste aktualisieren ----
+        if (werteliste.isNotEmpty && BLE_Werteliste.isNotEmpty) {
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Nr."] = werteliste[werteliste.length - 1]["Nr."];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Solldruck"] = werteliste[werteliste.length - 1]["Solldruck"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndruck"] = werteliste[werteliste.length - 1]["Nenndruck"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Solldrehmoment"] = werteliste[werteliste.length - 1]["Solldrehmoment"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["Nenndrehmoment"] = werteliste[werteliste.length - 1]["Nenndrehmoment"];
+          BLE_Werteliste[BLE_Werteliste.length - 1]["IO"] = werteliste[werteliste.length - 1]["IO"];
+        }
+        final t = Translations()..setLocale(data['Trans']);
+        // ---- PDF erstellen ----
+        final filePath = await FileExporter.exportCsvInBackground(
+          t:t,
+          data: werteliste,
+          projectVar: projectVar,
+          userName: userName,
+          serialPump: serialPump,
+          serialHose: serialHose,
+          serialTool: serialTool,
+          tool: tool,
+          toleranz: toleranz,
+          Einheit: einheit,
+          EinheitD: einheitd,
+        );
+
+        debugPrint('[FOREGROUND TASK] PDF erstellt: $filePath');
+
+      } catch (e) {
+        print("PDF-Debug:");
+        print("Projectnumber: $Projectnumber");
+        print("UserName: $UserName");
+        print("Serialpump: $Serialpump");
+        print("Serialhose: $Serialhose");
+        print("Serialtool: $Serialtool");
+        print("Tool: $Tool");
+        print("Toleranz: $Toleranz");
+        debugPrint('[FOREGROUND TASK] PDF-Erstellung fehlgeschlagen: $e');
+      }
+
+    }
 
     if (data['event'] == 'writeCommand') {
       final cmd = data['command'] as String?;

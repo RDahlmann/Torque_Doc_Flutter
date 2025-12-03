@@ -24,6 +24,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
   String? errorMessage;
   double? interpolatedPressure;
   late final t = Provider.of<Translations>(context);
+
   @override
   void initState() {
     super.initState();
@@ -34,9 +35,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
   }
 
-  void _handleTaskData(dynamic data) {
-
-  }
+  void _handleTaskData(dynamic data) {}
 
   void _sendCommand(String cmd) {
     debugPrint("[BLE_SCREEN] Sending command: $cmd");
@@ -45,6 +44,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
       'command': cmd,
     });
   }
+
   @override
   void dispose() {
     customerCodeController.dispose();
@@ -88,7 +88,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     debugPrint("[DEBUG] Saved tools: ${tools.map((t) => t.toolName).toList()}");
   }
 
-  /// Importieren von Tools über API
+  /// Tools importieren
   void _importTools() async {
     final code = customerCodeController.text.trim();
     if (code.length != 10) {
@@ -106,15 +106,12 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     try {
       final apiTools = await ApiService.getTools(code);
 
-      debugPrint("[DEBUG] Fetched tools from API: ${apiTools.map((t) => t.toolName).toList()}");
-
       // Alte Tools überschreiben
       await _saveTools(apiTools);
 
       // Kundencode speichern
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('lastCustomerCode', code);
-      debugPrint("[DEBUG] Saved customerCode: $code");
 
       setState(() {
         tools = apiTools;
@@ -124,7 +121,6 @@ class _Toolsscreenstate extends State<Toolsscreen> {
       setState(() {
         errorMessage = t.text('tools2');
       });
-      debugPrint("[DEBUG] API error: $e");
     } finally {
       setState(() {
         isLoading = false;
@@ -132,7 +128,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     }
   }
 
-  /// Lineare Interpolation von Druckwert anhand Drehmoment
+  /// Lineare Interpolation
   double? interpolatePressure(Tool1 tool, double inputTorque) {
     if (tool.torque.isEmpty || tool.pressure.isEmpty) return null;
     List<double> torqueList = tool.torque.map((e) => e.toDouble()).toList();
@@ -165,14 +161,9 @@ class _Toolsscreenstate extends State<Toolsscreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Eingabefeld Kundencode
+              if (isLoading) const Center(child: CircularProgressIndicator()),
 
-
-              // Ladeindikator
-              if (isLoading)
-                const Center(child: CircularProgressIndicator()),
-
-              // Dropdown für Tools
+              // TOOL AUSWAHL
               if (tools.isNotEmpty)
                 SizedBox(
                   width: double.infinity,
@@ -180,16 +171,16 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                     value: selectedTool,
                     isExpanded: true,
                     items: tools.map((tool) {
-                      final minTorque = tool.torque.isNotEmpty
-                          ? tool.torque.reduce((a, b) => a < b ? a : b)
-                          : 0;
-                      final maxTorque = tool.torque.isNotEmpty
-                          ? tool.torque.reduce((a, b) => a > b ? a : b)
-                          : 0;
+                      final minTorque = tool.torque.reduce((a, b) => a < b ? a : b);
+                      final maxTorque = tool.torque.reduce((a, b) => a > b ? a : b);
+
                       return DropdownMenuItem(
                         value: tool,
                         child: Text(
-                            "${tool.toolName} (${tool.serialNumber}) | Torque: $minTorque-$maxTorque Nm"),
+                          "${tool.toolName} (${tool.serialNumber}) | Torque: "
+                              "${convertNmToSelected(minTorque).toStringAsFixed(0)} - "
+                              "${convertNmToSelected(maxTorque).toStringAsFixed(0)} $DREHMOMENT_EINHEIT",
+                        ),
                       );
                     }).toList(),
                     onChanged: (tool) {
@@ -201,120 +192,107 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                   ),
                 ),
 
-
               const SizedBox(height: 16),
 
-              // Eingabefeld Drehmoment
+              // TORQUE EINGABE
               TextField(
                 controller: torqueController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: t.text('tools3'),
+                  labelText: t.text('tools3') + " ($DREHMOMENT_EINHEIT)",
                   border: OutlineInputBorder(),
                 ),
               ),
+
               const SizedBox(height: 16),
 
-              // Weiter Button
+              // WEITER BUTTON
               AppButtons.primaryText(
                 text: t.text('weiter'),
                 onPressed: () {
                   if (selectedTool == null) return;
 
-                  final inputTorque = double.tryParse(torqueController.text);
-                  if (inputTorque == null) {
+                  final rawInput = int.tryParse(torqueController.text);
+
+                  if (rawInput == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(t.text('tools4'),)),
+                      SnackBar(content: Text(t.text('tools4'))),
                     );
                     return;
                   }
 
-                  final minTorque = selectedTool!.torque.isNotEmpty
-                      ? selectedTool!.torque.reduce((a, b) => a < b ? a : b)
-                      : 0;
-                  final maxTorque = selectedTool!.torque.isNotEmpty
-                      ? selectedTool!.torque.reduce((a, b) => a > b ? a : b)
-                      : 0;
+// Umrechnung auf Nm
+                  final inputTorque = convertTorqueToNm(rawInput);
 
-                  if (inputTorque < minTorque || inputTorque > maxTorque) {
+                  final minTorque = selectedTool!.torque.reduce((a, b) => a < b ? a : b);
+                  final maxTorque = selectedTool!.torque.reduce((a, b) => a > b ? a : b);
+
+                  // Nutzer-Bereichsprüfung in ausgewählter Einheit
+                  if (rawInput < convertNmToSelected(minTorque) ||
+                      rawInput > convertNmToSelected(maxTorque)) {
                     String errorText = t.textArgs(
-                        'tools5',
-                        {'minTorque': minTorque.toStringAsFixed(0),
-                          'maxTorque': maxTorque.toStringAsFixed(0),
-                        }  // ❌ Map, nicht nur String
+                      'tools5',
+                      {
+                        'minTorque': convertNmToSelected(minTorque).toStringAsFixed(0),
+                        'maxTorque': convertNmToSelected(maxTorque).toStringAsFixed(0),
+                      },
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(
-                              errorText)),
+                      SnackBar(content: Text(errorText)),
                     );
-                    setState(() {
-                      interpolatedPressure = null;
-                    });
                     return;
                   }
 
-                  final pressure =
-                  interpolatePressure(selectedTool!, inputTorque);
+                  final pressure = interpolatePressure(selectedTool!, inputTorque.toDouble());
 
                   if (pressure != null && (pressure < 150 || pressure > 650)) {
                     String errorText = t.textArgs(
-                        'tools6',
-                        {'value': pressure.toStringAsFixed(2)}  // ❌ Map, nicht nur String
+                      'tools6',
+                      {'value': pressure.toStringAsFixed(2)},
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(errorText),
-                    ));
-                    setState(() {
-                      interpolatedPressure = null;
-                    });
+                      SnackBar(content: Text(errorText)),
+                    );
                     return;
                   }
-                  else{
-                    setState(() {
-                      interpolatedPressure = pressure;
-                    });
-                    String errorText = t.textArgs(
-                        'tools7',
-                        {'value': pressure?.toStringAsFixed(2)}  // ❌ Map, nicht nur String
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(
-                              errorText)),
-                    );
-                    final tool = selectedTool;
-                    if (tool == null) return;
-                    SOLLDRUCK=pressure!.toInt();
-                    SOLLDRUCKBAR=SOLLDRUCK;
-                    SOLLDRUCKPSI=(SOLLDRUCK*14.503).round();
-                    iskalibriert=false;
-                    FlutterForegroundTask.sendDataToTask({
-                      'event': 'setToolData',
-                      'Solltorque': inputTorque.toInt(),
-                      'toolName': tool.toolName,
-                      'torque': tool.torque,
-                      'pressure': tool.pressure,
-                      'command': '-SETP $SOLLDRUCK\$',
-                    });
-                    Navigator.pushNamed(context, '/kalibration');
 
-                  }
+                  setState(() => interpolatedPressure = pressure);
 
+                  String success = t.textArgs(
+                    'tools7',
+                    {'value': pressure?.toStringAsFixed(2)},
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(success)),
+                  );
 
+                  SOLLDRUCK = pressure!.toInt();
+                  SOLLDRUCKBAR = SOLLDRUCK;
+                  SOLLDRUCKPSI = (SOLLDRUCK * 14.503).round();
+                  iskalibriert = false;
+
+                  final tool = selectedTool!;
+                  FlutterForegroundTask.sendDataToTask({
+                    'event': 'setToolData',
+                    'Solltorque': inputTorque.toInt(),
+                    'toolName': tool.toolName,
+                    'torque': tool.torque,
+                    'pressure': tool.pressure,
+                    'command': '-SETP $SOLLDRUCK\$',
+                  });
+
+                  Navigator.pushNamed(context, '/kalibration');
                 },
               ),
 
-
-              // Zurück Button
               AppButtons.primaryText(
                 text: t.text('zurueck'),
                 onPressed: () => Navigator.pop(context),
                 verticalPadding: 16,
               ),
+
               const SizedBox(height: 40),
+
               TextField(
                 controller: customerCodeController,
                 decoration: InputDecoration(
@@ -325,14 +303,15 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                 ),
                 keyboardType: TextInputType.number,
               ),
+
               const SizedBox(height: 16),
 
-              // Importieren Button
               AppButtons.primaryText(
                 text: t.text('tools10'),
                 onPressed: _importTools,
                 verticalPadding: 16,
               ),
+
               const SizedBox(height: 24),
             ],
           ),

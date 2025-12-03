@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import '../utils/app_toast.dart';
-import '../utils/ble_foreground_task.dart';
 import '../widgets/app_template.dart';
 import '../widgets/app_buttons.dart';
 import '../providers/field_settings.dart';
 import '../utils/translation.dart';
 import '../globals.dart';
 import 'package:torquedoc/styles/app_text_styles.dart';
-import '../utils/file_exporter.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -243,8 +240,8 @@ class _HomeScreenState extends State<HomeScreen> {
               AppButtons.primaryText(
                 text: t.text('continue'),
                 onPressed: (){
-                  validateAndProceed;
-                  Navigator.pushNamed(context, '/choose');
+                  validateAndProceed();
+
                 },
 
                 verticalPadding: 16,
@@ -286,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
       AppToast.warning("Bitte Werkzeug eingeben");
       return;
     }
-
+    Navigator.pushNamed(context, '/choose');
     AppToast.success("Alle Pflichtfelder korrekt ausgefüllt!");
   }
 
