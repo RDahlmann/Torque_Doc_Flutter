@@ -31,6 +31,9 @@ int SOLLDRUCKPSI=0;
 int SOLLDREHMOMENT=0;
 int SOLLDREHMOMENTNM=0;
 int SOLLDREHMOMENTFTLBS=0;
+int SOLLTORQUE=0;
+
+
 
 //Zustandsvariablen
 bool Automatik = true;
@@ -48,9 +51,12 @@ bool ISPDF=false;
 int akt_schraube=0;
 int SCHRAUBENANZAHL=0;
 bool isdisconnect=false;
+bool istorque=false;
 List<Map<String, dynamic>> BLE_WertelisteGlobal = [];
 
-
+String TOOLNAME="";
+List<int> TORQUELIST=[];
+List<int> PRESSURELIST=[];
 //BLE
 String Geraetename="";
 bool connectedble=false;

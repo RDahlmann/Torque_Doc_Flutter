@@ -280,7 +280,11 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                     'pressure': tool.pressure,
                     'command': '-SETP $SOLLDRUCK\$',
                   });
-
+                  istorque=true;
+                  TOOLNAME=tool.toolName;
+                  SOLLTORQUE=inputTorque.toInt();
+                  TORQUELIST=tool.torque;
+                  PRESSURELIST=tool.pressure;
                   Navigator.pushNamed(context, '/kalibration');
                 },
               ),

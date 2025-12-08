@@ -137,8 +137,8 @@ class Translations extends ChangeNotifier {
       'upl7':'Werkzeugname',
       'upl8':'Seriennummer',
       'upl9':'Druck / Drehmoment',
-      'upl10':'Druck',
-      'upl11':'Drehmoment',
+      'upl10':'Druck [{Value}]',
+      'upl11':'Drehmoment [{Value}]',
       'upl12':'Am hochladen...',
       'upl13':'Hochladen',
 

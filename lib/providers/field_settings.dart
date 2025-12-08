@@ -6,7 +6,7 @@ class FieldSettings extends ChangeNotifier {
   // Pflichtfelder
   bool requireName = false;
   bool requireProject = true;
-  bool requireSerialPump = false;
+  bool requireSerialPump = true;
   bool requireSerialTool = false;
   bool requireSerialHose = false;
 

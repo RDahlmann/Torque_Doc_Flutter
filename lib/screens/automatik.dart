@@ -321,6 +321,20 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'command': cmd,
     });
   }
+  /// PDF Export aufrufen
+  void _sendFehler(String cmd) {
+    debugPrint("[BLE_SCREEN] Sending command: $cmd");
+    FlutterForegroundTask.sendDataToTask({
+      'event': 'fehlerCommand',
+      'command': cmd,
+      'isTorque':istorque,
+      'torquelist':TORQUELIST,
+      'toolname':TOOLNAME,
+      'pressurelist':PRESSURELIST,
+      'solltorque':SOLLTORQUE,
+
+    });
+  }
   Future<void> _sendPDFbar() async {
     final granted = await ensureStoragePermission();
     if (!granted) {
@@ -343,6 +357,11 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Einheit':"bar",
       'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
       'Trans':lang,
+      'isTorque':istorque,
+      'torquelist':TORQUELIST,
+      'toolname':TOOLNAME,
+      'pressurelist':PRESSURELIST,
+      'solltorque':SOLLTORQUE,
 
     });
   }
@@ -368,6 +387,11 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Einheit':"PSI",
       'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
       'Trans':lang,
+      'isTorque':istorque,
+      'torquelist':TORQUELIST,
+      'toolname':TOOLNAME,
+      'pressurelist':PRESSURELIST,
+      'solltorque':SOLLTORQUE,
     });
   }
 
@@ -393,6 +417,11 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Einheit':"bar",
       'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
       'Trans':lang,
+      'isTorque':istorque,
+      'torquelist':TORQUELIST,
+      'toolname':TOOLNAME,
+      'pressurelist':PRESSURELIST,
+      'solltorque':SOLLTORQUE,
 
     });
   }
@@ -418,6 +447,12 @@ class _Autoscreenstate  extends State<Autoscreen> {
       'Einheit':"PSI",
       'EinheitD': DREHMOMENT_EINHEIT, // Neu: Nm oder Ft.Lbs.
       'Trans':lang,
+      'isTorque':istorque,
+      'torquelist':TORQUELIST,
+      'toolname':TOOLNAME,
+      'pressurelist':PRESSURELIST,
+      'solltorque':SOLLTORQUE,
+
     });
   }
 
@@ -671,11 +706,12 @@ class _Autoscreenstate  extends State<Autoscreen> {
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 
                   if(Automatik){
-                    _sendCommand('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
+                    _sendFehler('-AutomatikA $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                   }
                   else{
-                    _sendCommand('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
+                    _sendFehler('-AutomatikM $pwm $Projectnumber $formattedDate $SOLLDRUCK $referenzzeitkal $vorreferenzzeit $akt_schraube\$');
                   }
+
                 });
 
               },

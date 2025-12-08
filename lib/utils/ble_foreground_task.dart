@@ -428,6 +428,11 @@ class BleForegroundTask extends TaskHandler {
         final String toleranz=data['Toleranz']??'';
         final String einheit=data['Einheit']??'';
         final String einheitd=data['EinheitD']??'';
+        currentTorqueList = List<int>.from(data['torquelist'] ?? []);
+        currentPressureList = List<int>.from(data['pressurelist'] ?? []);
+        currentToolName = data['toolname'] ?? "";
+        istorque=data['isTorque'];
+        solltorque=data['solltorque'];
 
         // ---- Werteliste aktualisieren ----
         if (werteliste.isNotEmpty && BLE_Werteliste.isNotEmpty) {
@@ -482,6 +487,12 @@ class BleForegroundTask extends TaskHandler {
         final String toleranz=data['Toleranz']??'';
         final String einheit=data['Einheit']??'';
         final String einheitd=data['EinheitD']??'';
+        currentTorqueList = List<int>.from(data['torquelist'] ?? []);
+        currentPressureList = List<int>.from(data['pressurelist'] ?? []);
+        currentToolName = data['toolname'] ?? "";
+        istorque=data['isTorque']??false;
+        solltorque=data['solltorque']??0;
+
 
         // ---- Werteliste aktualisieren ----
         if (werteliste.isNotEmpty && BLE_Werteliste.isNotEmpty) {
@@ -535,7 +546,26 @@ class BleForegroundTask extends TaskHandler {
     }*/
       await writeCommandFragmented(cmd!);
     }
+    if (data['event'] == 'fehlerCommand') {
+      final cmd = data['command'] as String?;
+      /* if (writeCharacteristic != null && cmd != null) {
+        debugPrint("[BLE_TASK] Writing command: $cmd");
+        await writeCharacteristic!.write(utf8.encode(cmd), withoutResponse: true);
+      } else {
+        debugPrint("[BLE_TASK] Cannot write command, characteristic or command is null");
+      }
+    }*/
+      currentTorqueList = List<int>.from(data['torquelist'] ?? []);
+      currentPressureList = List<int>.from(data['pressurelist'] ?? []);
+      currentToolName = data['toolname'] ?? "";
+      istorque = data['isTorque'] ?? false;
+      solltorque = data['solltorque'] ?? 0;
+      await writeCommandFragmented(cmd!);
+
+    }
   }
+
+
 
   Future<void> writeCommandFragmented(String cmd) async {
     if (writeCharacteristic == null) return;
