@@ -167,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 16),
 
               // 🔹 Seriennummer Pumpe
-              if (fields.requireSerialPump)
+
                 TextField(
                   controller: sPumpController,
                   style: AppTextStyles.body,
@@ -182,7 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     saveData('serpump', value);
                   },
                 ),
-              if (fields.requireSerialPump) SizedBox(height: 16),
+
+              SizedBox(height: 16),
 
               // 🔹 Seriennummer Schlauch
               if (fields.requireSerialHose)

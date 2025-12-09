@@ -403,6 +403,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
       );
       return;
     }
+    print("DEBUG: Serialpump='$Serialpump'");
     final lang = Provider.of<Translations>(context, listen: false).currentLanguage;
     FlutterForegroundTask.sendDataToTask({
       'event': 'csverstellen',
