@@ -26,37 +26,6 @@ import 'utils/ble_foreground_task.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("[MAIN] Widgets binding initialisiert");
-  final translations = Translations();
-  await translations.loadSavedLanguage();
-  await loadSettings();
-  debugPrint("[MAIN] Einstellungen geladen");
-  debugPrint("[MAIN] Logo geladen");
-  // Alte ForegroundService stoppen, falls aktiv
-  if (await FlutterForegroundTask.isRunningService) {
-    await FlutterForegroundTask.stopService();
-    debugPrint("[MAIN] Alter ForegroundService gestoppt");
-  }
-
-  // ForegroundTask initialisieren
-  FlutterForegroundTask.init(
-    androidNotificationOptions: AndroidNotificationOptions(
-      channelId: 'ble_channel',
-      channelName: 'BLE Service',
-      channelDescription: 'BLE Foreground Service',
-      channelImportance: NotificationChannelImportance.LOW,
-      priority: NotificationPriority.LOW,
-    ),
-    iosNotificationOptions: const IOSNotificationOptions(),
-    foregroundTaskOptions: ForegroundTaskOptions(
-      eventAction: ForegroundTaskEventAction.repeat(500),
-      autoRunOnBoot: false,
-      autoRunOnMyPackageReplaced: false,
-      allowWakeLock: true,
-      allowWifiLock: true,
-    ),
-  );
-
-  debugPrint("[MAIN] ForegroundTask.init ausgeführt");
 
   runApp(
     MultiProvider(
@@ -88,6 +57,42 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Alles, was Plugins / Shared Preferences nutzt, nach erstem Frame starten
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final translations = Provider.of<Translations>(context, listen: false);
+      await translations.loadSavedLanguage();
+      await loadSettings();
+      debugPrint("[MAIN] Einstellungen geladen");
+      debugPrint("[MAIN] Logo geladen");
+
+      // Alte ForegroundService stoppen, falls aktiv
+      if (await FlutterForegroundTask.isRunningService) {
+        await FlutterForegroundTask.stopService();
+        debugPrint("[MAIN] Alter ForegroundService gestoppt");
+      }
+
+      // ForegroundTask initialisieren
+      FlutterForegroundTask.init(
+        androidNotificationOptions: AndroidNotificationOptions(
+          channelId: 'ble_channel',
+          channelName: 'BLE Service',
+          channelDescription: 'BLE Foreground Service',
+          channelImportance: NotificationChannelImportance.LOW,
+          priority: NotificationPriority.LOW,
+        ),
+        iosNotificationOptions: const IOSNotificationOptions(),
+        foregroundTaskOptions: ForegroundTaskOptions(
+          eventAction: ForegroundTaskEventAction.repeat(500),
+          autoRunOnBoot: false,
+          autoRunOnMyPackageReplaced: false,
+          allowWakeLock: true,
+          allowWifiLock: true,
+        ),
+      );
+
+      debugPrint("[MAIN] ForegroundTask.init ausgeführt");
+    });
   }
 
   @override
@@ -133,7 +138,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/pressure': (_) => pressurescreen(),
         '/settings': (_) => Settingsscreen(),
         '/tools': (_) => Toolsscreen(),
-        '/update':(_)=>UploadToolScreen(),
+        '/update': (_) => UploadToolScreen(),
         '/bluetooth': (_) => const BluetoothScreen(isInitialScreen: true),
       },
       theme: ThemeData(
