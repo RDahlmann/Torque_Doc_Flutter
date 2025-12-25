@@ -4,11 +4,9 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
-import '../main.dart';
-import '../utils/translation.dart';
 import '../widgets/app_buttons.dart';
 import '../widgets/app_template.dart';
-
+import '../utils/translation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class DeviceData {
@@ -32,31 +30,22 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   DeviceData? selectedDevice;
   bool isConnected = false;
 
-  late Translations t; // Wird nach erstem Frame initialisiert
-
   @override
   void initState() {
     super.initState();
     debugPrint("[BLE_SCREEN] initState called");
 
-    // Kommunikation mit Foreground Task initialisieren
-    FlutterForegroundTask.initCommunicationPort();
-    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
-
-    // Übersetzer und BLE Service erst nach erstem Frame laden
+    // Plugins und BLE-Service erst nach dem ersten Frame initialisieren
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      t = Provider.of<Translations>(context, listen: false);
-
-      await _startBleServiceSafe();
+      _initForegroundTask();
     });
   }
 
-  Future<void> _startBleServiceSafe() async {
-    try {
-      await _startBleService();
-    } catch (e) {
-      debugPrint("[BLE_SCREEN] Fehler beim Starten der ForegroundTask: $e");
-    }
+  Future<void> _initForegroundTask() async {
+    FlutterForegroundTask.initCommunicationPort();
+    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
+
+    await _startBleService();
   }
 
   Future<bool> ensureBlePermissions() async {
@@ -102,13 +91,13 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     await FlutterForegroundTask.startService(
       notificationTitle: 'BLE Service',
       notificationText: 'Scanning for devices...',
-      callback: startBleTask,
+      callback: startBleTask, // implementiere startBleTask in deiner Task-Datei
     );
-
     debugPrint("[BLE_SCREEN] Foreground BLE service started");
   }
 
   void _handleTaskData(dynamic data) {
+    final t = Provider.of<Translations>(context, listen: false);
     debugPrint("[BLE_SCREEN] onReceiveData: $data");
 
     if (data['event'] == 'deviceFound') {
@@ -162,13 +151,14 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
 
   @override
   void dispose() {
-    debugPrint("[BLE_SCREEN] dispose called");
     FlutterForegroundTask.removeTaskDataCallback(_handleTaskData);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = Provider.of<Translations>(context);
+
     return AppTemplate(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -195,9 +185,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
               text: "Scan",
               onPressed: () {
                 debugPrint("[BLE_SCREEN] Requesting new scan");
-                FlutterForegroundTask.sendDataToTask({
-                  'event': 'startScan',
-                });
+                FlutterForegroundTask.sendDataToTask({'event': 'startScan'});
               },
               verticalPadding: 16,
             ),
