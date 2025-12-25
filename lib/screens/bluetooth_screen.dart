@@ -4,6 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
+import '../main.dart';
 import '../widgets/app_buttons.dart';
 import '../widgets/app_template.dart';
 import '../utils/translation.dart';
