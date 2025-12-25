@@ -89,8 +89,19 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     FlutterForegroundTask.initCommunicationPort();
     FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
 
-    _startBleService();
+    // Start erst nach erstem Frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startBleServiceSafe();
+    });
   }
+  Future<void> _startBleServiceSafe() async {
+    try {
+      await _startBleService();
+    } catch (e) {
+      debugPrint("[BLE_SCREEN] Fehler beim Starten der ForegroundTask: $e");
+    }
+  }
+
 
   void _handleTaskData(dynamic data) {
     debugPrint("[BLE_SCREEN] onReceiveData: $data");
