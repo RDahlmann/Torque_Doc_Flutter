@@ -27,12 +27,38 @@ class BluetoothScreen extends StatefulWidget {
   State<BluetoothScreen> createState() => _BluetoothScreenState();
 }
 
-
 class _BluetoothScreenState extends State<BluetoothScreen> {
   List<DeviceData> devicesList = [];
   DeviceData? selectedDevice;
   bool isConnected = false;
-  late final t = Provider.of<Translations>(context);
+
+  late Translations t; // Wird nach erstem Frame initialisiert
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint("[BLE_SCREEN] initState called");
+
+    // Kommunikation mit Foreground Task initialisieren
+    FlutterForegroundTask.initCommunicationPort();
+    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
+
+    // Übersetzer und BLE Service erst nach erstem Frame laden
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      t = Provider.of<Translations>(context, listen: false);
+
+      await _startBleServiceSafe();
+    });
+  }
+
+  Future<void> _startBleServiceSafe() async {
+    try {
+      await _startBleService();
+    } catch (e) {
+      debugPrint("[BLE_SCREEN] Fehler beim Starten der ForegroundTask: $e");
+    }
+  }
+
   Future<bool> ensureBlePermissions() async {
     if (Platform.isAndroid) {
       final deviceInfo = DeviceInfoPlugin();
@@ -78,30 +104,9 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       notificationText: 'Scanning for devices...',
       callback: startBleTask,
     );
+
     debugPrint("[BLE_SCREEN] Foreground BLE service started");
   }
-  @override
-  void initState() {
-    super.initState();
-    debugPrint("[BLE_SCREEN] initState called");
-
-    // Kommunikation mit Foreground Task initialisieren
-    FlutterForegroundTask.initCommunicationPort();
-    FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
-
-    // Start erst nach erstem Frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startBleServiceSafe();
-    });
-  }
-  Future<void> _startBleServiceSafe() async {
-    try {
-      await _startBleService();
-    } catch (e) {
-      debugPrint("[BLE_SCREEN] Fehler beim Starten der ForegroundTask: $e");
-    }
-  }
-
 
   void _handleTaskData(dynamic data) {
     debugPrint("[BLE_SCREEN] onReceiveData: $data");
@@ -197,9 +202,8 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
               verticalPadding: 16,
             ),
             const SizedBox(height: 16),
-
             AppButtons.primaryText(
-             text: t.text('weiter'),
+              text: t.text('weiter'),
               onPressed: () {
                 if (widget.isInitialScreen) {
                   Navigator.pushReplacementNamed(context, '/home');
