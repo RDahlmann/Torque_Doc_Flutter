@@ -7,8 +7,6 @@ import 'package:torquedoc/utils/file_exporter.dart';
 import 'globals.dart';
 import 'utils/translation.dart';
 import 'styles/app_colors.dart';
-import 'styles/app_text_styles.dart';
-
 import 'screens/home.dart';
 import 'screens/settings.dart';
 import 'screens/automatik.dart';
@@ -27,11 +25,18 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("[MAIN] Widgets binding initialisiert");
 
+  // 🔹 Plugins / SharedPreferences / Übersetzungen VOR runApp initialisieren
+  final translations = Translations(initialLanguage: currentLanguage);
+  await translations.loadSavedLanguage();
+  await loadSettings();
+
+  debugPrint("[MAIN] Einstellungen geladen");
+  debugPrint("[MAIN] Logo geladen");
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-            create: (_) => Translations(initialLanguage: currentLanguage)),
+        ChangeNotifierProvider(create: (_) => translations),
         ChangeNotifierProvider(create: (_) => FieldSettings()),
       ],
       child: const MyApp(),
@@ -58,21 +63,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Alles, was Plugins / Shared Preferences nutzt, nach erstem Frame starten
+    // 🔹 ForegroundTask erst nach Plugins initialisiert
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final translations = Provider.of<Translations>(context, listen: false);
-      await translations.loadSavedLanguage();
-      await loadSettings();
-      debugPrint("[MAIN] Einstellungen geladen");
-      debugPrint("[MAIN] Logo geladen");
-
-      // Alte ForegroundService stoppen, falls aktiv
+      // Alte ForegroundServices stoppen, falls aktiv
       if (await FlutterForegroundTask.isRunningService) {
         await FlutterForegroundTask.stopService();
         debugPrint("[MAIN] Alter ForegroundService gestoppt");
       }
 
-      // ForegroundTask initialisieren
       FlutterForegroundTask.init(
         androidNotificationOptions: AndroidNotificationOptions(
           channelId: 'ble_channel',
@@ -104,11 +102,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.detached) {
-      // Stoppe BLE-Service beim Beenden der App
       if (await FlutterForegroundTask.isRunningService) {
         await FlutterForegroundTask.stopService();
-        debugPrint(
-            "[MAIN] Foreground Service gestoppt beim Beenden der App");
+        debugPrint("[MAIN] Foreground Service gestoppt beim Beenden der App");
       }
     }
   }
@@ -124,10 +120,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('de'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('de')],
       routes: {
         '/home': (_) => HomeScreen(),
         '/auto': (_) => Autoscreen(),
