@@ -156,7 +156,7 @@ if (Platform.isAndroid) {
   dir = Directory('/storage/emulated/0/Download');
 } else {
   final baseDir = await getApplicationDocumentsDirectory();
-  dir = Directory('${baseDir.path}/TorqueDocPDFs');
+  dir = Directory('${baseDir.path}/TorqueDocData');
 }
 if (!await dir.exists()) await dir.create(recursive: true);
 
@@ -372,7 +372,7 @@ if (!await dir.exists()) await dir.create(recursive: true);
     }
 
    
-
+    await file.writeAsBytes(await pdf.save());
     return file.path;
   }
 
@@ -403,7 +403,7 @@ if (Platform.isAndroid) {
   dir = Directory('/storage/emulated/0/Download');
 } else {
   final baseDir = await getApplicationDocumentsDirectory();
-  dir = Directory('${baseDir.path}/TorqueDocPDFs');
+  dir = Directory('${baseDir.path}/TorqueDocData');
 }
 if (!await dir.exists()) await dir.create(recursive: true);
     final file = File('${dir.path}/$fileName');

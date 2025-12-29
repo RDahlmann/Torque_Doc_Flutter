@@ -36,6 +36,8 @@
     <true/>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true/>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Diese App benötigt Zugriff auf die Fotobibliothek, um Protokolle und PDFs zu speichern.</string>
 
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Diese App benötigt Bluetooth, um Geräte zu erkennen und zu verbinden.</string>
