@@ -7,10 +7,13 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'dart:typed_data';
 import 'package:permission_handler/permission_handler.dart';
-
+import 'package:share_plus/share_plus.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:provider/provider.dart';
 import 'package:torquedoc/utils/translation.dart';
 import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
+
 enum Customer{Standart,Alkitronik}
 
 class FileExporter {
@@ -368,7 +371,8 @@ class FileExporter {
 
     }
 
-    await file.writeAsBytes(await pdf.save());
+   
+
     return file.path;
   }
 
@@ -444,6 +448,7 @@ class FileExporter {
     String csvString = const ListToCsvConverter().convert(csvData);
 
     await file.writeAsString(csvString);
+    
     return file.path;
   }
 }
