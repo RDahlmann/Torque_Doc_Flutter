@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:torquedoc/utils/translation.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 enum Customer{Standart,Alkitronik}
 
@@ -150,16 +151,15 @@ class FileExporter {
     final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
     final fileName = "${safeProjectVar}_$dateString.pdf";
 
-    Directory dir;
-    if (Platform.isAndroid) {
+   Directory dir;
+if (Platform.isAndroid) {
+  dir = Directory('/storage/emulated/0/Download');
+} else {
+  final baseDir = await getApplicationDocumentsDirectory();
+  dir = Directory('${baseDir.path}/TorqueDocPDFs');
+}
+if (!await dir.exists()) await dir.create(recursive: true);
 
-      dir = Directory('/storage/emulated/0/Download');
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
-
-
-    if (!await dir.exists()) await dir.create(recursive: true);
     final file = File('${dir.path}/$fileName');
     if (await file.exists()) await file.delete();
 
@@ -398,14 +398,14 @@ class FileExporter {
     final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
     final fileName = "${safeProjectVar}_$dateString.csv";
 
-    Directory dir;
-    if (Platform.isAndroid) {
-      dir = Directory('/storage/emulated/0/Download');
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
-
-    if (!await dir.exists()) await dir.create(recursive: true);
+      Directory dir;
+if (Platform.isAndroid) {
+  dir = Directory('/storage/emulated/0/Download');
+} else {
+  final baseDir = await getApplicationDocumentsDirectory();
+  dir = Directory('${baseDir.path}/TorqueDocPDFs');
+}
+if (!await dir.exists()) await dir.create(recursive: true);
     final file = File('${dir.path}/$fileName');
     if (await file.exists()) await file.delete();
 

@@ -32,6 +32,11 @@
     <false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Diese App benötigt Bluetooth, um Geräte zu erkennen und zu verbinden.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
