@@ -9,7 +9,8 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.torquedoc"
+        //applicationId = "com.example.torquedoc"//Standart
+        applicationId = "com.example.torquedocalkitronic"//Alkitronik
         minSdk = 24
         targetSdk = 34
         versionCode = 1

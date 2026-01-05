@@ -36,7 +36,8 @@ class _SettingsscreenState extends State<Settingsscreen>{
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   onPressed: () {
-                    launchUrl(Uri.parse("https://www.stephandahlmann.com/impressum"));
+                    //launchUrl(Uri.parse("https://www.stephandahlmann.com/impressum"));//Standart
+                    launchUrl(Uri.parse("https://www.alkitronic.com/en/privacy-policy/legal-notice/"));//Alkitronik
                   },
                   child: Text(
                     t.text('set11'),
@@ -51,7 +52,8 @@ class _SettingsscreenState extends State<Settingsscreen>{
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   onPressed: () {
-                    launchUrl(Uri.parse("https://www.stephandahlmann.com/datenschutz"));
+                    //launchUrl(Uri.parse("https://www.stephandahlmann.com/datenschutz"));//Standart
+                    launchUrl(Uri.parse("https://www.alkitronic.com/en/privacy-policy/"));//Alkitronik
                   },
                   child: Text(
                     t.text('set12'),

@@ -44,7 +44,6 @@ dependencies:
   printing: ^5.10.0
   csv: ^5.0.0
   share_plus: ^12.0.1
-  file_picker: ^5.0.1
   path_provider: ^2.0.15
   open_file: ^3.3.2
   http: ^1.1.0
@@ -90,6 +89,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/logosd.jpg
+    - assets/logoalki.jpg
   fonts:
     - family: MyFont
       fonts:

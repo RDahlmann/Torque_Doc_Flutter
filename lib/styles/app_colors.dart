@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-
+enum Customer{Standart,Alkitronik}
 class AppColors {
-  static const primary = Color(0xFF0057B7);  // dein Blau
+  static const activeCustomer= Customer.Standart;
+
+  //static const primary = Color(0xFF0057B7);  // Standart
+  static const primary = Color(0xFFE10613);  // Alki
   static const secondary = Color(0xFFFFD700); // dein Gelb
   static const background = Color(0xFFF4F4F4);
   static const text = Color(0xFF333333);
