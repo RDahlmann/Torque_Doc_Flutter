@@ -259,33 +259,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void validateAndProceed() {
     final fields = Provider.of<FieldSettings>(context, listen: false);
+    final t = Provider.of<Translations>(context, listen: false); // ⚡ wichtig
 
     if (fields.requireName && UserName.isEmpty) {
-      AppToast.warning("Bitte Name eingeben");
+      AppToast.warning(t.text('name_insert'));
       return;
     }
     if (Projectnumber.isEmpty) {
-      AppToast.warning("Bitte Projektnummer eingeben");
+      AppToast.warning(t.text('project_insert'));
       return;
     }
-    if (fields.requireSerialPump && Serialpump.isEmpty) {
-      AppToast.warning("Bitte Seriennummer Pumpe eingeben");
+    if (Toleranz.isEmpty) {
+      AppToast.warning(t.text('tolerance_insert'));
+      return;
+    }
+    if (Serialpump.isEmpty) {
+      AppToast.warning(t.text('serial_pump_insert'));
       return;
     }
     if (fields.requireSerialTool && Serialtool.isEmpty) {
-      AppToast.warning("Bitte Seriennummer Werkzeug eingeben");
+      AppToast.warning(t.text('serial_tool_insert'));
       return;
     }
     if (fields.requireSerialHose && Serialhose.isEmpty) {
-      AppToast.warning("Bitte Seriennummer Schlauch eingeben");
+      AppToast.warning(t.text('serial_hose_insert'));
       return;
     }
     if (Tool.isEmpty) {
-      AppToast.warning("Bitte Werkzeug eingeben");
+      AppToast.warning(t.text('tool_insert'));
       return;
     }
     Navigator.pushNamed(context, '/choose');
-    AppToast.success("Alle Pflichtfelder korrekt ausgefüllt!");
   }
+
 
 }

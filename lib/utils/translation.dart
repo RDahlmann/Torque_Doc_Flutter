@@ -84,7 +84,7 @@ class Translations extends ChangeNotifier {
       'home12':'Bitte die Seriennummer des Schlauchs eingeben',
       'home13':'Seriennummer Werkzeug',
       'home14':'Bitte die Seriennummer des Werkzeugs eingeben',
-      'home15':'BeschreibungWerkzeug',
+      'home15':'Werkzeug',
       'home16':'Bitte die Werkzeugbeschreibung eingeben',
 
 
@@ -305,7 +305,7 @@ class Translations extends ChangeNotifier {
       'serial_pump_insert': 'Enter pump serial number',
       'serial_tool_insert': 'Enter tool serial number',
       'serial_hose_insert': 'Enter hose serial number',
-      'tool_insert': 'Tool',
+      'tool_insert': 'Enter Tool description',
       'continue': 'Continue',
       'save_back': 'Save & Back',
       'language': 'Select language',
