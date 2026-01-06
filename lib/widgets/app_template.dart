@@ -126,18 +126,59 @@ class _AppTemplateState extends State<AppTemplate> {
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: GestureDetector(
-                onTap: () async {
-                  //final Uri url = Uri.parse('https://www.stephandahlmann.com/de/index.php?cid=kontakt'); //Standart
-                  final Uri url = Uri.parse('https://www.alkitronic.com/en/contact/'); //Alkitronik
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Icon(Icons.email, color: Colors.black, size: 36),
-                  ],
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // LEFT: powered by + Logo
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const textStyle = TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      );
+
+                      final textPainter = TextPainter(
+                        text: const TextSpan(text: 'powered by', style: textStyle),
+                        textDirection: TextDirection.ltr,
+                      )..layout();
+
+                      final textWidth = textPainter.width;
+                      final logoHeight = textWidth * (269 / 1726);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('powered by', style: textStyle),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: textWidth,
+                            height: logoHeight,
+                            child: Image.asset(
+                              'assets/logosd.jpg',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  // RIGHT: Mail Icon
+                  GestureDetector(
+                    onTap: () async {
+                      final Uri url = Uri.parse(
+                        'https://www.alkitronic.com/en/contact/',
+                      );
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    },
+                    child: const Icon(
+                      Icons.email,
+                      color: Colors.black,
+                      size: 36,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
