@@ -65,8 +65,8 @@ class _AppTemplateState extends State<AppTemplate> {
               padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02, vertical: 4),
               child: Row(
                 children: [
-                  //Image.asset('assets/logosd.jpg', height: logoHeight),//Standart
-                  Image.asset('assets/logoalki.jpg', height: logoHeight),//Alkitronik
+                  Image.asset('assets/logosd.jpg', height: logoHeight),//Standart
+                 // Image.asset('assets/logoalki.jpg', height: logoHeight),//Alkitronik
                   SizedBox(width: screenWidth * 0.02),
                   Expanded(
                     child: Center(
@@ -126,6 +126,22 @@ class _AppTemplateState extends State<AppTemplate> {
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
+              child: GestureDetector(
+                onTap: () async {
+                  final Uri url = Uri.parse('https://www.stephandahlmann.com/de/index.php?cid=kontakt'); //Standart
+                  //final Uri url = Uri.parse('https://www.alkitronic.com/en/contact/'); //Alkitronik
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Icon(Icons.email, color: Colors.black, size: 36),
+                  ],
+                ),
+              ),
+            ),
+            /*Padding(
+              padding: const EdgeInsets.all(16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -180,7 +196,7 @@ class _AppTemplateState extends State<AppTemplate> {
                   ),
                 ],
               ),
-            ),
+            ),*///Alkitronik
           ],
         ),
       ),

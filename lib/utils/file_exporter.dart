@@ -19,7 +19,7 @@ enum Customer{Standart,Alkitronik}
 
 class FileExporter {
 
-  static const activeCustomer= Customer.Alkitronik;
+  static const activeCustomer= Customer.Standart;
 
   static Uint8List get logoBytes{
       switch(activeCustomer){
@@ -233,8 +233,8 @@ if (!await dir.exists()) await dir.create(recursive: true);
 
           // Logo
           pw.Container(
-            //height: 30,//standart
-            height: 60,//Alkitronik
+            height: 30,//standart
+            //height: 60,//Alkitronik
             alignment: pw.Alignment.center,
             child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
           ),

@@ -1,20 +1,28 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// --- KeyStore laden ---
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
+    load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace = "com.example.torquedoc"
+    namespace = "com.stephandahlmann.torquedoc"
     compileSdk = 36
 
     defaultConfig {
-        //applicationId = "com.example.torquedoc"//Standart
-        applicationId = "com.example.torquedocalkitronic"//Alkitronik
+        applicationId = "com.stephandahlmann.torquedoc" // Standard, oder "com.stephandahlmann.torquedocalkitronic" für Alkitronik
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 35
+        versionCode = 3
+        versionName = "1.0.2"
     }
 
     compileOptions {
@@ -32,9 +40,20 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storeFile = file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+        }
+    }
+
     buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

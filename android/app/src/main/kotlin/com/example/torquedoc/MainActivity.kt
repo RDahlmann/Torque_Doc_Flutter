@@ -1,4 +1,4 @@
-package com.example.torquedoc  // <--- dein Paketname
+package com.stephandahlmann.torquedoc  // <--- dein Paketname
 
 import io.flutter.embedding.android.FlutterActivity
 
