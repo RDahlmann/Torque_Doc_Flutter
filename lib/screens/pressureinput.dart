@@ -104,6 +104,7 @@ class _pressurescreenstate extends State<pressurescreen> {
                     SOLLDRUCK = 0;
                     return;
                   }else{
+                    istorque=false;
                     SOLLDRUCK = druckBar; // In Bar speichern
                     _sendCommand('-SETP $SOLLDRUCK\$');
                     iskalibriert=false;
