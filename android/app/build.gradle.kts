@@ -21,8 +21,8 @@ android {
         applicationId = "com.stephandahlmann.torquedoc" // Standard, oder "com.stephandahlmann.torquedocalkitronic" für Alkitronik
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.0"
     }
 
     compileOptions {

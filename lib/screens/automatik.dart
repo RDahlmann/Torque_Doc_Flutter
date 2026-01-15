@@ -73,29 +73,20 @@ class _Autoscreenstate  extends State<Autoscreen> {
 
   Future<bool> ensureStoragePermission() async {
     if (Platform.isAndroid) {
-      final deviceInfo = DeviceInfoPlugin();
-      final androidInfo = await deviceInfo.androidInfo;
-      final sdkInt = androidInfo.version.sdkInt ?? 0;
+      final sdkInt = (await DeviceInfoPlugin().androidInfo).version.sdkInt ?? 0;
 
-      Map<Permission, PermissionStatus> statuses;
-
-      if (sdkInt >= 33) {
-        // Android 13+ braucht nur Medienzugriff, keinen Full Storage
-        statuses = await [Permission.photos, Permission.videos].request();
-      } else if (sdkInt >= 30) {
-        // Android 11+ evtl. MANAGE_EXTERNAL_STORAGE
-        statuses = await [Permission.manageExternalStorage].request();
-      } else {
-        // Android <11
-        statuses = await [Permission.storage].request();
+      if (sdkInt < 29) {
+        // Android < 10
+        final status = await Permission.storage.request();
+        return status.isGranted;
       }
-
-      return statuses.values.every((s) => s.isGranted);
+      // Android 10+ regelt MediaStore automatisch, keine Permission nötig
+      return true;
     }
-
     // iOS fragt automatisch
     return true;
   }
+
 
 
 

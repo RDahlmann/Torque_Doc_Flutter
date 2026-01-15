@@ -114,6 +114,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       title: 'TorqueDoc',
       debugShowCheckedModeBanner: false,
       initialRoute: '/bluetooth',
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: const TextScaler.linear(1.0), // ✅ System-Schrift ignorieren
+          ),
+          child: child!,
+        );
+      },
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

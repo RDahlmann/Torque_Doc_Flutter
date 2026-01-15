@@ -165,31 +165,38 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
               // TOOL AUSWAHL
               if (tools.isNotEmpty)
-                SizedBox(
-                  width: double.infinity,
-                  child: DropdownButton<Tool1>(
-                    value: selectedTool,
-                    isExpanded: true,
-                    items: tools.map((tool) {
-                      final minTorque = tool.torque.reduce((a, b) => a < b ? a : b);
-                      final maxTorque = tool.torque.reduce((a, b) => a > b ? a : b);
-
-                      return DropdownMenuItem(
-                        value: tool,
-                        child: Text(
-                          "${tool.toolName} (${tool.serialNumber}) | Torque: "
-                              "${convertNmToSelected(minTorque).toStringAsFixed(0)} - "
-                              "${convertNmToSelected(maxTorque).toStringAsFixed(0)} $DREHMOMENT_EINHEIT",
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (tool) {
-                      setState(() {
-                        selectedTool = tool;
-                        interpolatedPressure = null;
-                      });
-                    },
+                DropdownButtonFormField<Tool1>(
+                  value: selectedTool,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 12,
+                    ),
                   ),
+                  items: tools.map((tool) {
+                    final minTorque = tool.torque.reduce((a, b) => a < b ? a : b);
+                    final maxTorque = tool.torque.reduce((a, b) => a > b ? a : b);
+
+                    return DropdownMenuItem<Tool1>(
+                      value: tool,
+                      child: Text(
+                        "${tool.toolName} (${tool.serialNumber})\n"
+                            "Torque: "
+                            "${convertNmToSelected(minTorque).toStringAsFixed(0)} - "
+                            "${convertNmToSelected(maxTorque).toStringAsFixed(0)} $DREHMOMENT_EINHEIT",
+                        softWrap: true,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (tool) {
+                    setState(() {
+                      selectedTool = tool;
+                      interpolatedPressure = null;
+                    });
+                  },
                 ),
 
               const SizedBox(height: 16),

@@ -31,7 +31,6 @@ class BleForegroundTask extends TaskHandler {
   BluetoothCharacteristic? writeCharacteristic;
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter taskStarter) async {
-
 // erst jetzt Scan starten
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
 

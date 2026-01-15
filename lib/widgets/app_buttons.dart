@@ -7,28 +7,36 @@ class AppButtons {
     required String text,
     required VoidCallback onPressed,
     double width = double.infinity,
-    double height = 50,
+    double minHeight = 50, // ✅ Mindesthöhe statt fixer Höhe
     double verticalPadding = 8.0,
     IconData? icon,
-    Color backgroundColor = AppColors.primary, // standard Farbe
-    Color foregroundColor = Colors.white, // Textfarbe
+    Color backgroundColor = AppColors.primary,
+    Color foregroundColor = Colors.white,
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: verticalPadding),
       child: SizedBox(
         width: width,
-        height: height,
         child: ElevatedButton.icon(
-          icon: icon != null ? Icon(icon, size: 24) : const SizedBox.shrink(),
+          icon: icon != null
+              ? Icon(icon, size: 24)
+              : const SizedBox.shrink(),
           label: Text(
             text,
             style: AppTextStyles.button,
+            textAlign: TextAlign.center,
+            softWrap: true,
           ),
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: backgroundColor,
             foregroundColor: foregroundColor,
             elevation: 4,
+            minimumSize: Size(width, minHeight), // ✅ wächst bei Bedarf
+            padding: const EdgeInsets.symmetric(
+              vertical: 14,
+              horizontal: 16,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -42,20 +50,20 @@ class AppButtons {
     required String text,
     required VoidCallback onPressed,
     double width = double.infinity,
-    double height = 50,
+    double minHeight = 50,
     double verticalPadding = 8.0,
-    Color backgroundColor = AppColors.primary,   // 👈 hinzugefügt
-    Color foregroundColor = Colors.white,        // 👈 hinzugefügt
+    Color backgroundColor = AppColors.primary,
+    Color foregroundColor = Colors.white,
   }) {
     return primary(
       text: text,
       onPressed: onPressed,
       width: width,
-      height: height,
+      minHeight: minHeight,
       verticalPadding: verticalPadding,
       icon: null,
-      backgroundColor: backgroundColor,  // 👈 weitergeben
-      foregroundColor: foregroundColor,  // 👈 weitergeben
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
     );
   }
 }

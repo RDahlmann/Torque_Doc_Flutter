@@ -14,6 +14,7 @@ import 'package:torquedoc/utils/translation.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path_provider/path_provider.dart';
 
 enum Customer{Standart,Alkitronik}
 
@@ -28,428 +29,449 @@ class FileExporter {
       }
   }
 
+
   static double? _firstBarWidth; // globale Variable innerhalb der Klasse
 
-  static pw.Widget buildBarChart({
-    required List<double> values,
-    required List<bool> isOk,
-    required List<String> labels,
-    required PdfFont font,
-    required String toleranz,
-    double maxHeight = 300,
-    double maxPercent = 120,
-    bool isFirstChart = false, // Kennzeichnung für das erste Diagramm
-  }) {
-    final tol = double.tryParse(toleranz) ?? 0;
-    final upperTol = 100 + tol;
-    final lowerTol = 100 - tol;
-
-    return pw.Container(
-      height: maxHeight + 40, // extra Platz für X-Achse Labels
-      padding: const pw.EdgeInsets.only(left: 40, bottom: 20),
-      child: pw.CustomPaint(
-        size: PdfPoint(double.infinity, maxHeight),
-        painter: (pw.PdfGraphics canvas, PdfPoint size) {
-          final barCount = values.length;
-
-          // --- Berechnung der Balkenbreite ---
-          double barWidth;
-          if (isFirstChart || _firstBarWidth == null) {
-            barWidth = size.x / (barCount * 1.5);
-            if (barCount < 4) {
-              barWidth = (size.x / 4) * 0.8;
-            }
-            _firstBarWidth = barWidth; // speichern für folgende Diagramme
-          } else {
-            barWidth = _firstBarWidth!; // fixierte Breite für alle weiteren Diagramme
-          }
-
-          final yStep = 10; // Y-Achse 10% Schritte
-
-          // --- Y-Achse zeichnen ---
-          canvas.setLineWidth(0.5);
-          canvas.setStrokeColor(PdfColors.black);
-          for (int i = 0; i <= maxPercent; i += yStep) {
-            final y = (i / maxPercent) * size.y;
-            canvas.moveTo(0, y);
-            canvas.lineTo(size.x, y);
-            canvas.strokePath();
-
-            canvas.setFillColor(PdfColors.black);
-            canvas.drawString(font, 8, '$i%', -30, y - 3);
-          }
-
-          // --- Balken, Toleranzlinien und X-Achse Label ---
-          for (int i = 0; i < barCount; i++) {
-            final percent = values[i].clamp(0, maxPercent);
-            final barHeight = (percent / maxPercent) * size.y;
-            final color = isOk[i] ? PdfColors.green : PdfColors.red;
-
-            // Balken zeichnen
-            canvas.setFillColor(color);
-            canvas.drawRect(i * barWidth * 1.5, 0, barWidth, barHeight);
-            canvas.fillPath();
-
-            // Toleranzlinien
-            canvas.setLineWidth(1.5);
-            canvas.setStrokeColor(PdfColors.grey);
-            final dashLength = 3.0;
-            for (final tolY in [lowerTol, upperTol]) {
-              final y = (tolY / maxPercent) * size.y;
-              double x = 0;
-              while (x < size.x) {
-                canvas.moveTo(x, y);
-                canvas.lineTo((x + dashLength).clamp(0, size.x), y);
-                canvas.strokePath();
-                x += dashLength * 2;
-              }
-            }
-
-            // X-Achse Label
-            canvas.setFillColor(PdfColors.black);
-            final label = labels[i];
-            canvas.drawString(font, 8, label, i * barWidth * 1.5, -10);
-          }
-
-          // Achsenlinien
-          canvas.moveTo(0, 0);
-          canvas.lineTo(size.x, 0); // X-Achse
-          canvas.moveTo(0, 0);
-          canvas.lineTo(0, size.y); // Y-Achse
-          canvas.strokePath();
-        },
-      ),
-    );
-  }
-
-
-
-
-
-
-
-  /// PDF-Erstellung, für Hintergrund-Task optimiert
-  static Future<String?> exportPdfInBackground({
-    required Translations t,
-    required List<Map<String, dynamic>> data,
-    required String projectVar,
-    required String userName,
-    required String serialPump,
-    required String serialHose,
-    required String serialTool,
-    required String tool,
-    required String toleranz,
-    required String Einheit,
-    required String EinheitD,
+  static Future<String> _saveToAndroidDownloads({
+    required Uint8List bytes,
+    required String fileName,
   }) async {
-    if (data.isEmpty) return null;
+    try {
+      Directory directory = Directory('/storage/emulated/0/Download/TorqueDoc');
 
-
-    final now = DateTime.now();
-    final dateString =
-        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
-    final fileName = "${safeProjectVar}_$dateString.pdf";
-
-   Directory dir;
-if (Platform.isAndroid) {
-  dir = Directory('/storage/emulated/0/Download');
-} else {
-  final baseDir = await getApplicationDocumentsDirectory();
-  dir = Directory('${baseDir.path}/TorqueDocData');
-}
-if (!await dir.exists()) await dir.create(recursive: true);
-
-    final file = File('${dir.path}/$fileName');
-    if (await file.exists()) await file.delete();
-
-    final pdf = pw.Document();
-
-    // --- Fonts ---
-    final ttfData = await rootBundle.load('assets/fonts/barlowregular.ttf');
-    final myFontregular = pw.Font.ttf(ttfData);
-    final ttfDatasemi = await rootBundle.load('assets/fonts/barlowsemibold.ttf');
-    final myFontsemi = pw.Font.ttf(ttfDatasemi);
-    final ttfDatabold = await rootBundle.load('assets/fonts/barlowbold.ttf');
-    final myFontbold = pw.Font.ttf(ttfDatabold);
-
-    // --- Daten vorbereiten ---
-    final percentValues = data.map((row) {
-      final soll = int.tryParse(row['Solldruck'].toString()) ?? 0;
-      final nenn = int.tryParse(row['Nenndruck'].toString()) ?? 0;
-      if (soll == 0) return 0.0;
-      return (nenn / soll) * 100.0;
-    }).toList();
-
-    final isOkList = data.map((row) {
-      return row['IO'].toString().toUpperCase() == "IO";
-    }).toList();
-
-    final labels = data.map((row) {
-      final nr = row['Nr.'] ?? row['Nr'] ?? '';
-      return nr.toString();
-    }).toList();
-    final headerNo     = t.text('pdf1'); // "Nr." / "No."
-    final headerTarget = t.textArgs('pdf2', {'Value': Einheit}); // e.g. "Solldruck [bar]"
-    final headerActual = t.textArgs('pdf3', {'Value': Einheit});
-    final headerTgtTrq = t.textArgs('pdf4', {'Value': EinheitD}); // "Solldrehmoment [Nm]"
-    final headerActTrq = t.textArgs('pdf5', {'Value': EinheitD}); // "Istdrehmoment [Nm]"
-    final headerIO     = "IO"; // "IO" / "OK"
-    // --- Messwerte Tabelle ---
-    final headers = [
-      headerNo,
-      headerTarget,
-      headerActual,
-      headerTgtTrq,
-      headerActTrq,
-      headerIO,
-    ];
-    final tableRows = data.map((row) {
-      return [
-        "${row['Nr.'] ?? ''}",
-        "${row['Solldruck'] ?? ''}",
-        "${row['Nenndruck'] ?? ''}",
-        "${row['Solldrehmoment'] ?? ''}",
-        "${row['Nenndrehmoment'] ?? ''}",
-        row['IO'] ?? "",
-      ];
-    }).toList();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.fromLTRB(80,20,20,20),
-        footer: (context) {
-          return pw.Container(
-            alignment: pw.Alignment.centerRight,
-            padding: const pw.EdgeInsets.only(right: 20, top: 5),
-            child: pw.Text(
-              '${t.text('home3')}: $projectVar    ${t.text('pdf6')}: $dateString',
-              style: pw.TextStyle(font: myFontregular, fontSize: 10, color: PdfColors.grey600),
-            ),
-          );
-        },
-        build: (context) => [
-
-          // Logo
-          pw.Container(
-            height: 30,//standart
-            //height: 60,//Alkitronik
-            alignment: pw.Alignment.center,
-            child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
-          ),
-          pw.SizedBox(height: 12),
-
-          // Projektdaten
-          pw.Table.fromTextArray(
-            headers: [],
-            data: [
-              if (userName.isNotEmpty) [t.text('home1'), userName],
-              if (projectVar.isNotEmpty) [t.text('home3'), projectVar],
-              if (serialPump.isNotEmpty) [t.text('home9'), serialPump],
-              if (serialHose.isNotEmpty) [t.text('home11'), serialHose],
-              if (serialTool.isNotEmpty) [t.text('home13'), serialTool],
-              if (tool.isNotEmpty) [t.text('home15'), tool],
-              if (toleranz.isNotEmpty) [t.text('home7'), '$toleranz %'],
-              [t.text('pdf6'), dateString]
-            ],
-            border: null,
-            cellPadding: const pw.EdgeInsets.only(bottom: 4),
-            columnWidths: {0: const pw.FixedColumnWidth(170), 1: const pw.FlexColumnWidth()},
-            cellStyle: pw.TextStyle(font: myFontbold, fontSize: 14),
-          ),
-          pw.SizedBox(height: 12),
-
-          // Messwerte Tabelle
-          pw.Text(t.text('pdf7'), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 12),
-          pw.Table(
-            border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
-            columnWidths: {
-              0: const pw.FixedColumnWidth(20),
-              1: const pw.FixedColumnWidth(65),
-              2: const pw.FixedColumnWidth(65),
-              3: const pw.FixedColumnWidth(85),
-              4: const pw.FixedColumnWidth(85),
-              5: const pw.FixedColumnWidth(20),
-            },
-            children: [
-              // Kopfzeile
-              pw.TableRow(
-                decoration: const pw.BoxDecoration(color: PdfColors.grey600),
-                children: headers.map(
-                      (h) => pw.Padding(
-                    padding: const pw.EdgeInsets.all(5),
-                    child: pw.Text(
-                      h,
-                      textAlign: pw.TextAlign.center,
-                      style: pw.TextStyle(color: PdfColors.white, font: myFontsemi, fontSize: 8, fontWeight: pw.FontWeight.bold),
-                    ),
-                  ),
-                ).toList(),
-              ),
-              // Datenzeilen
-              ...tableRows.map((row) {
-                final isOk = row[5].toString().toUpperCase() == "IO";
-                return pw.TableRow(
-                  children: row.map((cellText) {
-                    if (cellText == row[5]) {
-                      return pw.Container(
-                        alignment: pw.Alignment.center,
-                        padding: const pw.EdgeInsets.all(5),
-                        color: isOk ? PdfColors.green300 : PdfColors.red300,
-                        child: pw.Text(
-                          cellText,
-                          style: pw.TextStyle(color: PdfColors.white, font: myFontregular, fontSize: 11),
-                        ),
-                      );
-                    }
-                    return pw.Padding(
-                      padding: const pw.EdgeInsets.all(5),
-                      child: pw.Text(cellText, textAlign: pw.TextAlign.center, style: pw.TextStyle(color: PdfColors.black, font: myFontregular, fontSize: 11)),
-                    );
-                  }).toList(),
-                );
-              }),
-            ],
-          ),
-        ],
-      ),
-    );
-
-    // --- Diagramme aufteilen ---
-    const barsPerChart = 20;
-    const chartsPerPage = 2;
-    const chartHeight = 300.0;
-    const maxPercent = 120.0;
-
-    List<List<double>> percentGroups = [];
-    List<List<bool>> isOkGroups = [];
-    List<List<String>> labelGroups = [];
-
-    for (int i = 0; i < percentValues.length; i += barsPerChart) {
-      percentGroups.add(percentValues.sublist(i, (i + barsPerChart > percentValues.length) ? percentValues.length : i + barsPerChart));
-      isOkGroups.add(isOkList.sublist(i, (i + barsPerChart > isOkList.length) ? isOkList.length : i + barsPerChart));
-      labelGroups.add(labels.sublist(i, (i + barsPerChart > labels.length) ? labels.length : i + barsPerChart));
-    }
-
-    for (int i = 0; i < percentGroups.length; i += chartsPerPage) {
-      final chartsThisPage = <pw.Widget>[];
-      for (int j = i; j < i + chartsPerPage && j < percentGroups.length; j++) {
-        chartsThisPage.add(pw.SizedBox(height: 20));
-        chartsThisPage.add(buildBarChart(
-          values: percentGroups[j],
-          isOk: isOkGroups[j],
-          labels: labelGroups[j],
-          font: PdfFont.helvetica(pdf.document),
-          maxHeight: chartHeight,
-          maxPercent: maxPercent,
-          toleranz: toleranz,
-          isFirstChart: i == 0 && j == 0,
-        ));
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
       }
 
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (context) => pw.Column(
-            mainAxisAlignment: pw.MainAxisAlignment.start,
-            children: [
-              pw.Column(children: chartsThisPage), // Diagramme
-              pw.Spacer(), // sorgt dafür, dass der Footer unten bleibt
-              pw.Container(
-                alignment: pw.Alignment.centerRight,
-                padding: const pw.EdgeInsets.only(right: 20, bottom: 10),
-                child: pw.Text(
-                  '${t.text('home3')}: $projectVar    ${t.text('pdf6')}: $dateString',
-                  style: pw.TextStyle(font: myFontregular, fontSize: 10, color: PdfColors.grey600),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      final file = File('${directory.path}/$fileName');
 
+      // Überschreiben, falls existiert
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      await file.writeAsBytes(bytes);
+      debugPrint("✅ Datei gespeichert: ${file.path}");
+      return file.path;
+    } catch (e, st) {
+      debugPrint("❌ Fehler beim Speichern der Datei: $fileName\n$e\n$st");
+      rethrow;
     }
-
-   
-    await file.writeAsBytes(await pdf.save());
-    return file.path;
   }
 
-  /// CSV-Erstellung für Hintergrund-Task
-  static Future<String?> exportCsvInBackground({
-    required Translations t,
-    required List<Map<String, dynamic>> data,
-    required String projectVar,
-    required String userName,
-    required String serialPump,
-    required String serialHose,
-    required String serialTool,
-    required String tool,
-    required String toleranz,
-    required String Einheit,
-    required String EinheitD,
+
+
+
+
+
+  static pw.Widget buildBarChart({
+  required List<double> values,
+  required List<bool> isOk,
+  required List<String> labels,
+  required PdfFont font,
+  required String toleranz,
+  double maxHeight = 300,
+  double maxPercent = 120,
+  bool isFirstChart = false,
+  }) {
+  final tol = double.tryParse(toleranz) ?? 0;
+  final upperTol = 100 + tol;
+  final lowerTol = 100 - tol;
+
+  return pw.Container(
+  height: maxHeight + 40,
+  padding: const pw.EdgeInsets.only(left: 40, bottom: 20),
+  child: pw.CustomPaint(
+  size: PdfPoint(double.infinity, maxHeight),
+  painter: (pw.PdfGraphics canvas, PdfPoint size) {
+  final barCount = values.length;
+
+  double barWidth;
+  if (isFirstChart || _firstBarWidth == null) {
+  barWidth = size.x / (barCount * 1.5);
+  if (barCount < 4) {
+  barWidth = (size.x / 4) * 0.8;
+  }
+  _firstBarWidth = barWidth;
+  } else {
+  barWidth = _firstBarWidth!;
+  }
+
+  final yStep = 10;
+
+  // Y-Achse
+  canvas.setLineWidth(0.5);
+  canvas.setStrokeColor(PdfColors.black);
+  for (int i = 0; i <= maxPercent; i += yStep) {
+  final y = (i / maxPercent) * size.y;
+  canvas.moveTo(0, y);
+  canvas.lineTo(size.x, y);
+  canvas.strokePath();
+
+  canvas.setFillColor(PdfColors.black);
+  canvas.drawString(font, 8, '$i%', -30, y - 3);
+  }
+
+  // Balken + Toleranzlinien + X-Labels
+  for (int i = 0; i < barCount; i++) {
+  final percent = values[i].clamp(0, maxPercent);
+  final barHeight = (percent / maxPercent) * size.y;
+  final color = isOk[i] ? PdfColors.green : PdfColors.red;
+
+  canvas.setFillColor(color);
+  canvas.drawRect(i * barWidth * 1.5, 0, barWidth, barHeight);
+  canvas.fillPath();
+
+  // Toleranzlinien
+  canvas.setLineWidth(1.5);
+  canvas.setStrokeColor(PdfColors.grey);
+  final dashLength = 3.0;
+  for (final tolY in [lowerTol, upperTol]) {
+  final y = (tolY / maxPercent) * size.y;
+  double x = 0;
+  while (x < size.x) {
+  canvas.moveTo(x, y);
+  canvas.lineTo((x + dashLength).clamp(0, size.x), y);
+  canvas.strokePath();
+  x += dashLength * 2;
+  }
+  }
+
+  // X-Achse Label
+  canvas.setFillColor(PdfColors.black);
+  final label = labels[i];
+  canvas.drawString(font, 8, label, i * barWidth * 1.5, -10);
+  }
+
+  // Achsenlinien
+  canvas.moveTo(0, 0);
+  canvas.lineTo(size.x, 0);
+  canvas.moveTo(0, 0);
+  canvas.lineTo(0, size.y);
+  canvas.strokePath();
+  },
+  ),
+  );
+  }
+
+  /// PDF-Erstellung
+  static Future<String?> exportPdfInBackground({
+  required Translations t,
+  required List<Map<String, dynamic>> data,
+  required String projectVar,
+  required String userName,
+  required String serialPump,
+  required String serialHose,
+  required String serialTool,
+  required String tool,
+  required String toleranz,
+  required String Einheit,
+  required String EinheitD,
   }) async {
-    if (data.isEmpty) return null;
+  if (data.isEmpty) return null;
 
-    final now = DateTime.now();
-    final dateString =
-        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
-    final fileName = "${safeProjectVar}_$dateString.csv";
+  final now = DateTime.now();
+  final dateString =
+  "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+  final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
+  final fileName = "${safeProjectVar}_$dateString.pdf";
 
-      Directory dir;
-if (Platform.isAndroid) {
-  dir = Directory('/storage/emulated/0/Download');
-} else {
+  File? iosFile;
+  if (!Platform.isAndroid) {
   final baseDir = await getApplicationDocumentsDirectory();
-  dir = Directory('${baseDir.path}/TorqueDocData');
-}
-if (!await dir.exists()) await dir.create(recursive: true);
-    final file = File('${dir.path}/$fileName');
-    if (await file.exists()) await file.delete();
+  final dir = Directory('${baseDir.path}/TorqueDocData');
+  if (!await dir.exists()) await dir.create(recursive: true);
 
-    List<List<String>> csvData = [];
-
-    // Projektdaten als Header
-    if (userName.isNotEmpty) csvData.add([t.text('home1'), userName]);
-    if (projectVar.isNotEmpty) csvData.add([t.text('home3'), projectVar]);
-    if (serialPump.isNotEmpty) csvData.add([t.text('home9'), serialPump]);
-    if (serialHose.isNotEmpty) csvData.add([t.text('home11'), serialHose]);
-    if (serialTool.isNotEmpty) csvData.add([t.text('home13'), serialTool]);
-    if (tool.isNotEmpty) csvData.add([t.text('home15'), tool]);
-    if (toleranz.isNotEmpty) csvData.add([t.text('home7'), '$toleranz %']);
-    csvData.add([t.text('pdf6'), dateString]);
-    csvData.add([]); // leere Zeile
-
-    // Tabellenkopf (analog PDF)
-    final headers = [
-      t.text('pdf1'), // "Nr."
-      t.textArgs('pdf2', {'Value': Einheit}), // Soll
-      t.textArgs('pdf3', {'Value': Einheit}), // Ist
-      t.textArgs('pdf4', {'Value': EinheitD}), // Soll Drehmoment
-      t.textArgs('pdf5', {'Value': EinheitD}), // Ist Drehmoment
-      'IO',
-    ];
-    csvData.add(headers);
-
-    // Datenzeilen
-    for (var row in data) {
-      csvData.add([
-        "${row['Nr.'] ?? ''}",
-        "${row['Solldruck'] ?? ''}",
-        "${row['Nenndruck'] ?? ''}",
-        "${row['Solldrehmoment'] ?? ''}",
-        "${row['Nenndrehmoment'] ?? ''}",
-        row['IO'] ?? '',
-      ]);
-    }
-
-    String csvString = const ListToCsvConverter().convert(csvData);
-
-    await file.writeAsString(csvString);
-    
-    return file.path;
+  iosFile = File('${dir.path}/$fileName');
+  if (await iosFile.exists()) await iosFile.delete();
   }
-}
+
+  final pdf = pw.Document();
+
+  // Fonts
+  final ttfData = await rootBundle.load('assets/fonts/barlowregular.ttf');
+  final myFontregular = pw.Font.ttf(ttfData);
+  final ttfDatasemi = await rootBundle.load('assets/fonts/barlowsemibold.ttf');
+  final myFontsemi = pw.Font.ttf(ttfDatasemi);
+  final ttfDatabold = await rootBundle.load('assets/fonts/barlowbold.ttf');
+  final myFontbold = pw.Font.ttf(ttfDatabold);
+
+  // Daten vorbereiten
+  final percentValues = data.map((row) {
+  final soll = int.tryParse(row['Solldruck'].toString()) ?? 0;
+  final nenn = int.tryParse(row['Nenndruck'].toString()) ?? 0;
+  if (soll == 0) return 0.0;
+  return (nenn / soll) * 100.0;
+  }).toList();
+
+  final isOkList = data.map((row) => row['IO'].toString().toUpperCase() == "IO").toList();
+  final labels = data.map((row) => "${row['Nr.'] ?? row['Nr.'] ?? ''}").toList();
+
+  final headerNo = t.text('pdf1');
+  final headerTarget = t.textArgs('pdf2', {'Value': Einheit});
+  final headerActual = t.textArgs('pdf3', {'Value': Einheit});
+  final headerTgtTrq = t.textArgs('pdf4', {'Value': EinheitD});
+  final headerActTrq = t.textArgs('pdf5', {'Value': EinheitD});
+  final headerIO = "IO";
+
+  final headers = [headerNo, headerTarget, headerActual, headerTgtTrq, headerActTrq, headerIO];
+
+  final tableRows = data.map((row) {
+  return [
+  "${row['Nr.'] ?? ''}",
+  "${row['Solldruck'] ?? ''}",
+  "${row['Nenndruck'] ?? ''}",
+  "${row['Solldrehmoment'] ?? ''}",
+  "${row['Nenndrehmoment'] ?? ''}",
+  row['IO'] ?? "",
+  ];
+  }).toList();
+
+  pdf.addPage(
+  pw.MultiPage(
+  pageFormat: PdfPageFormat.a4,
+  margin: const pw.EdgeInsets.fromLTRB(80, 20, 20, 20),
+  footer: (context) {
+  return pw.Container(
+  alignment: pw.Alignment.centerRight,
+  padding: const pw.EdgeInsets.only(right: 20, top: 5),
+  child: pw.Text(
+  '${t.text('home3')}: $projectVar    ${t.text('pdf6')}: $dateString',
+  style: pw.TextStyle(font: myFontregular, fontSize: 10, color: PdfColors.grey600),
+  ),
+  );
+  },
+  build: (context) => [
+  // Logo
+  pw.Container(
+  height: 30,
+  alignment: pw.Alignment.center,
+  child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
+  ),
+  pw.SizedBox(height: 12),
+
+  // Projektdaten
+  pw.Table.fromTextArray(
+  headers: [],
+  data: [
+  if (userName.isNotEmpty) [t.text('home1'), userName],
+  if (projectVar.isNotEmpty) [t.text('home3'), projectVar],
+  if (serialPump.isNotEmpty) [t.text('home9'), serialPump],
+  if (serialHose.isNotEmpty) [t.text('home11'), serialHose],
+  if (serialTool.isNotEmpty) [t.text('home13'), serialTool],
+  if (tool.isNotEmpty) [t.text('home15'), tool],
+  if (toleranz.isNotEmpty) [t.text('home7'), '$toleranz %'],
+  [t.text('pdf6'), dateString]
+  ],
+  border: null,
+  cellPadding: const pw.EdgeInsets.only(bottom: 4),
+  columnWidths: {0: const pw.FixedColumnWidth(170), 1: const pw.FlexColumnWidth()},
+  cellStyle: pw.TextStyle(font: myFontbold, fontSize: 14),
+  ),
+  pw.SizedBox(height: 12),
+
+  // Messwerte Tabelle
+  pw.Text(t.text('pdf7'), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+  pw.SizedBox(height: 12),
+  pw.Table(
+  border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+  columnWidths: {
+  0: const pw.FixedColumnWidth(20),
+  1: const pw.FixedColumnWidth(65),
+  2: const pw.FixedColumnWidth(65),
+  3: const pw.FixedColumnWidth(85),
+  4: const pw.FixedColumnWidth(85),
+  5: const pw.FixedColumnWidth(20),
+  },
+  children: [
+  pw.TableRow(
+  decoration: const pw.BoxDecoration(color: PdfColors.grey600),
+  children: headers.map(
+  (h) => pw.Padding(
+  padding: const pw.EdgeInsets.all(5),
+  child: pw.Text(
+  h,
+  textAlign: pw.TextAlign.center,
+  style: pw.TextStyle(
+  color: PdfColors.white, font: myFontsemi, fontSize: 8, fontWeight: pw.FontWeight.bold),
+  ),
+  ),
+  ).toList(),
+  ),
+  ...tableRows.map((row) {
+  final isOk = row[5].toString().toUpperCase() == "IO";
+  return pw.TableRow(
+  children: row.map((cellText) {
+  if (cellText == row[5]) {
+  return pw.Container(
+  alignment: pw.Alignment.center,
+  padding: const pw.EdgeInsets.all(5),
+  color: isOk ? PdfColors.green300 : PdfColors.red300,
+  child: pw.Text(
+  cellText,
+  style: pw.TextStyle(color: PdfColors.white, font: myFontregular, fontSize: 11),
+  ),
+  );
+  }
+  return pw.Padding(
+  padding: const pw.EdgeInsets.all(5),
+  child: pw.Text(cellText,
+  textAlign: pw.TextAlign.center,
+  style: pw.TextStyle(color: PdfColors.black, font: myFontregular, fontSize: 11)),
+  );
+  }).toList(),
+  );
+  }),
+  ],
+  ),
+  ],
+  ),
+  );
+
+  // Diagramme
+  const barsPerChart = 20;
+  const chartsPerPage = 2;
+  const chartHeight = 300.0;
+  const maxPercent = 120.0;
+
+  List<List<double>> percentGroups = [];
+  List<List<bool>> isOkGroups = [];
+  List<List<String>> labelGroups = [];
+
+  for (int i = 0; i < percentValues.length; i += barsPerChart) {
+  percentGroups.add(percentValues.sublist(i, (i + barsPerChart > percentValues.length) ? percentValues.length : i + barsPerChart));
+  isOkGroups.add(isOkList.sublist(i, (i + barsPerChart > isOkList.length) ? isOkList.length : i + barsPerChart));
+  labelGroups.add(labels.sublist(i, (i + barsPerChart > labels.length) ? labels.length : i + barsPerChart));
+  }
+
+  for (int i = 0; i < percentGroups.length; i += chartsPerPage) {
+  final chartsThisPage = <pw.Widget>[];
+  for (int j = i; j < i + chartsPerPage && j < percentGroups.length; j++) {
+  chartsThisPage.add(pw.SizedBox(height: 20));
+  chartsThisPage.add(buildBarChart(
+  values: percentGroups[j],
+  isOk: isOkGroups[j],
+  labels: labelGroups[j],
+  font: PdfFont.helvetica(pdf.document),
+  maxHeight: chartHeight,
+  maxPercent: maxPercent,
+  toleranz: toleranz,
+  isFirstChart: i == 0 && j == 0,
+  ));
+  }
+
+  pdf.addPage(
+  pw.Page(
+  pageFormat: PdfPageFormat.a4,
+  build: (context) => pw.Column(
+  mainAxisAlignment: pw.MainAxisAlignment.start,
+  children: [
+  pw.Column(children: chartsThisPage),
+  pw.Spacer(),
+  pw.Container(
+  alignment: pw.Alignment.centerRight,
+  padding: const pw.EdgeInsets.only(right: 20, bottom: 10),
+  child: pw.Text(
+  '${t.text('home3')}: $projectVar    ${t.text('pdf6')}: $dateString',
+  style: pw.TextStyle(font: myFontregular, fontSize: 10, color: PdfColors.grey600),
+  ),
+  ),
+  ],
+  ),
+  ),
+  );
+  }
+
+  final pdfBytes = await pdf.save();
+  if (Platform.isAndroid) {
+  await _saveToAndroidDownloads(bytes: pdfBytes, fileName: fileName);
+  return 'Downloads/TorqueDoc/$fileName';
+  } else {
+  await iosFile!.writeAsBytes(pdfBytes);
+  return iosFile.path;
+  }
+  }
+
+  /// CSV-Erstellung
+  static Future<String?> exportCsvInBackground({
+  required Translations t,
+  required List<Map<String, dynamic>> data,
+  required String projectVar,
+  required String userName,
+  required String serialPump,
+  required String serialHose,
+  required String serialTool,
+  required String tool,
+  required String toleranz,
+  required String Einheit,
+  required String EinheitD,
+  }) async {
+  if (data.isEmpty) return null;
+
+  final now = DateTime.now();
+  final dateString =
+  "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+  final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
+  final fileName = "${safeProjectVar}_$dateString.csv";
+
+  File? iosFile;
+  if (!Platform.isAndroid) {
+  final baseDir = await getApplicationDocumentsDirectory();
+  final dir = Directory('${baseDir.path}/TorqueDocData');
+  if (!await dir.exists()) await dir.create(recursive: true);
+
+  iosFile = File('${dir.path}/$fileName');
+  if (await iosFile.exists()) await iosFile.delete();
+  }
+
+  List<List<String>> csvData = [];
+
+  // Projektdaten Header
+  if (userName.isNotEmpty) csvData.add([t.text('home1'), userName]);
+  if (projectVar.isNotEmpty) csvData.add([t.text('home3'), projectVar]);
+  if (serialPump.isNotEmpty) csvData.add([t.text('home9'), serialPump]);
+  if (serialHose.isNotEmpty) csvData.add([t.text('home11'), serialHose]);
+  if (serialTool.isNotEmpty) csvData.add([t.text('home13'), serialTool]);
+  if (tool.isNotEmpty) csvData.add([t.text('home15'), tool]);
+  if (toleranz.isNotEmpty) csvData.add([t.text('home7'), '$toleranz %']);
+  csvData.add([t.text('pdf6'), dateString]);
+  csvData.add([]);
+
+  // Tabellenkopf
+  final headers = [
+  t.text('pdf1'),
+  t.textArgs('pdf2', {'Value': Einheit}),
+  t.textArgs('pdf3', {'Value': Einheit}),
+  t.textArgs('pdf4', {'Value': EinheitD}),
+  t.textArgs('pdf5', {'Value': EinheitD}),
+  'IO',
+  ];
+  csvData.add(headers);
+
+  // Datenzeilen
+  for (var row in data) {
+  csvData.add([
+  "${row['Nr.'] ?? ''}",
+  "${row['Solldruck'] ?? ''}",
+  "${row['Nenndruck'] ?? ''}",
+  "${row['Solldrehmoment'] ?? ''}",
+  "${row['Nenndrehmoment'] ?? ''}",
+  row['IO'] ?? '',
+  ]);
+  }
+
+  final csvString = const ListToCsvConverter().convert(csvData);
+
+  if (Platform.isAndroid) {
+  await _saveToAndroidDownloads(
+  bytes: Uint8List.fromList(utf8.encode(csvString)),
+  fileName: fileName,
+  );
+  return 'Downloads/TorqueDoc/$fileName';
+  } else {
+  await iosFile!.writeAsString(csvString);
+  return iosFile.path;
+  }
+  }
+  }
+

@@ -61,7 +61,7 @@ class Translations extends ChangeNotifier {
       'automatik14':'Solldruck: {value} {unit}',
       'automatik15': 'Schraube {value} von {unit}',
       'automatik16':'Es ist ein Fehler mit der Bluetooth Kommunikation aufgetreten,\n bitte bestätigen',
-      'automatik17':'Es ist ein Fehler an der Pumpe aufgetreten,\n bitte Bluettooth neu verbinden',
+      'automatik17':'Es ist ein Fehler an der Pumpe aufgetreten,\n hier klicken um Bluetooth neu zu verbinden',
 
       'bt1':'Gerät verbunden!',
       'bt2':'Fehler!',
@@ -195,7 +195,7 @@ class Translations extends ChangeNotifier {
       'automatik14': 'Target pressure: {value} {unit}',
       'automatik15': 'Bolt {value} of {unit}',
       'automatik16':  'An error has occurred with Bluetooth communication.\n Please confirm.',
-      'automatik17':'An error has occurred with the pump\n Please reconnect Bluetooth.',
+      'automatik17':'An error has occurred with the pump\n click here to reconnect Bluetooth.',
 
       'bt1': 'Device connected!',
       'bt2': 'Error!',
