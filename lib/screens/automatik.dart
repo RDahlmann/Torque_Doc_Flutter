@@ -544,7 +544,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
               const SizedBox(height: 16),
 
               AppButtons.primaryText(
-                text: isaborted2 ? t.text('automatik6') : t.text('automatik7'),
+                text: isaborted2 ? t.text('automatik7') : t.text('automatik6'),
                 onPressed: () {
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
@@ -601,7 +601,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
                 backgroundColor: AppColors.green,
               ),
               AppButtons.primaryText(
-                text: isaborted2 ? t.text('automatik8') : t.text('automatik9'),
+                text: isaborted2 ? t.text('automatik9') : t.text('automatik8'),
                 onPressed: () {
                   markiereLetztenEintrag("NIO");
                   final now = DateTime.now();

@@ -82,7 +82,7 @@ class _pressurescreenstate extends State<pressurescreen> {
               ),
 
               AppButtons.primaryText(
-                text: "Weiter",
+                text: t.text('continue'),
                 onPressed: () {
                   int druckBar;
                   if (isPSI) {
