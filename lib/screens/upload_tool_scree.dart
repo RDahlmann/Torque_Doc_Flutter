@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../globals.dart';
 import '../utils/translation.dart';
@@ -33,10 +34,14 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     // Kundencode laden
-    final savedCustomer = prefs.getString('customerCode');
+    /*final savedCustomer = prefs.getString('customerCode');
     if (savedCustomer != null) {
       _customerController.text = savedCustomer;
-    }
+    }*/ //Standart
+    final savedCustomer = prefs.getString('customerCode');
+    if (savedCustomer != null && savedCustomer.startsWith('10019')) {
+      _customerController.text = savedCustomer.substring(5); // nur die letzten 5 Ziffern
+    }//Alki
 
     // Druckwerte laden
     final savedPressure = prefs.getString('saved_pressure_values');
@@ -78,14 +83,22 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
     final customer = _customerController.text.trim();
     final name = _nameController.text.trim();
     final serial = _serialController.text.trim();
-
+    /*
     if (customer.length != 10 || name.isEmpty || serial.isEmpty) {
       final te = Provider.of<Translations>(context, listen: false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(te.text('upl1'))),
       );
       return;
-    }
+    }*///Standart
+    final fullCustomerCode = '10019${_customerController.text}';
+    if (fullCustomerCode.length != 10 || name.isEmpty || serial.isEmpty) {
+      final te = Provider.of<Translations>(context, listen: false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(te.text('upl1'))),
+      );
+      return;
+    }//Alkitronik
 
     List<int> pressure = [];
     List<int> torque = [];
@@ -124,14 +137,20 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
       return;
     }
 
-    final payload = {
+    /*final payload = {
       'customer_code': customer,
       'tool_name': name,
       'serial_number': serial,
       'torque': jsonEncode(torque),
       'pressure': jsonEncode(pressure),
-    };
-
+    };*/ //Standart
+    final payload = {
+      'customer_code': fullCustomerCode,
+      'tool_name': name,
+      'serial_number': serial,
+      'torque': jsonEncode(torque),
+      'pressure': jsonEncode(pressure),
+    }; //Standart
     setState(() => isUploading = true);
 
     try {
@@ -146,8 +165,8 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
 
       if (data['status'] == 'ok') {
         final prefs = await SharedPreferences.getInstance();
-        prefs.setString('customerCode', customer);
-
+        //prefs.setString('customerCode', customer);//Standart
+        prefs.setString('customerCode', fullCustomerCode);//Alki
         final te = Provider.of<Translations>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(te.text('upl4'))),
@@ -191,12 +210,13 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
     final te = Provider.of<Translations>(context);
 
     return AppTemplate(
+      hideSettingsIcon: true,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
+           /* TextField(
               controller: _customerController,
               decoration: InputDecoration(
                 labelText: te.text('upl5'),
@@ -210,8 +230,26 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
                     'customerCode', _customerController.text.trim());
               },
             ),
+            *///Standart
+            TextField(
+              controller: _customerController,
+              decoration: InputDecoration(
+                labelText: te.text('upl5'),
+                hintText: 'XXXXX', // optisch zeigen, dass 10019 fix ist
+                prefixText: '10019',     // **das wird automatisch vorne angezeigt**
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(5), // User tippt nur die letzten 5 Stellen
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (v) async {
+                final prefs = await SharedPreferences.getInstance();
+                prefs.setString('customerCode', '10019$v'); // Prefix hinzufügen beim Speichern
+              },
+            ),//Alkitronik
             SizedBox(height: 12),
-
             TextField(
               controller: _nameController,
               decoration: InputDecoration(

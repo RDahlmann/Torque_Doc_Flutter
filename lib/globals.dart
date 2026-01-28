@@ -12,6 +12,8 @@ String Serialhose="";
 String Serialtool="";
 String Tool="";
 
+String connectedDeviceName = "";
+
 //Einheitsauswahl
 String DRUCK_EINHEIT = "Bar"; // default
 String DREHMOMENT_EINHEIT = "Nm"; // default
@@ -36,6 +38,7 @@ int SOLLTORQUE=0;
 
 
 //Zustandsvariablen
+bool isauto=false;
 bool Automatik = true;
 bool isfehler=false;
 bool iskalibriert=false;

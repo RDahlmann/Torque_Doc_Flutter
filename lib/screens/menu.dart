@@ -24,7 +24,9 @@ class _Menuscreenstate  extends State<Menuscreen> {
     FlutterForegroundTask.addTaskDataCallback(_handleTaskData);
   }
 
-  void _handleTaskData(dynamic data) {}
+  void _handleTaskData(dynamic data) {
+
+  }
 
   void _sendCommand(String cmd) {
     debugPrint("[BLE_SCREEN] Sending command: $cmd");
@@ -60,7 +62,7 @@ class _Menuscreenstate  extends State<Menuscreen> {
                   iscomplete = false;
                   isaborted1 = false;
                   isaborted2 = false;
-
+                  isauto=true;
                   final now = DateTime.now();
                   final formattedDate = "${now.day.toString().padLeft(2,'0')}-${now.month.toString().padLeft(2,'0')}-${now.year}";
 

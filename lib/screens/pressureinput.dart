@@ -53,80 +53,82 @@ class _pressurescreenstate extends State<pressurescreen> {
     return WillPopScope(
       onWillPop: () async => false,
       child: AppTemplate(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 24),
-              TextField(
-                style: AppTextStyles.body,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: isPSI
-                      ? t.text('pres2')
-                      : t.text('pres1'),
-                  hintText: t.text('pres3'),
-                  suffixIcon: Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Text(isPSI ? "PSI" : "bar", style: AppTextStyles.body),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent, // 🔹 auch leere Bereiche erfassen
+          onTap: () => FocusScope.of(context).unfocus(), // 🔹 Tastatur schließen
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                TextField(
+                  style: AppTextStyles.body,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: DRUCK_EINHEIT == "PSI"
+                        ? t.text('pres2')
+                        : t.text('pres1'),
+                    hintText: t.text('pres3'),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: Text(DRUCK_EINHEIT == "PSI" ? "PSI" : "bar", style: AppTextStyles.body),
+                    ),
+                    suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                    labelStyle: AppTextStyles.body,
+                    hintStyle: AppTextStyles.body.copyWith(color: Colors.grey.shade400),
                   ),
-                  suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                  labelStyle: AppTextStyles.body,
-                  hintStyle: AppTextStyles.body.copyWith(color: Colors.grey.shade400),
+                  onChanged: (value) {
+                    _eingabe = int.tryParse(value) ?? 0;
+                  },
                 ),
-                onChanged: (value) {
-                  // Nur lokale Variable setzen, SOLLDRUCK wird erst beim Weiter gedrückt
-                  _eingabe = int.tryParse(value) ?? 0;
-                },
-              ),
 
-              AppButtons.primaryText(
-                text: t.text('continue'),
-                onPressed: () {
-                  int druckBar;
-                  if (isPSI) {
-                    SOLLDRUCKPSI=_eingabe;
-                    druckBar = (_eingabe / 14.5038).round(); // Umrechnung PSI → Bar
-                    SOLLDRUCKBAR=druckBar;
-                  } else {
-                    druckBar = _eingabe;
-                    SOLLDRUCKBAR=_eingabe;
-                    SOLLDRUCKPSI=(_eingabe*14.503).round();
-                  }
+                const SizedBox(height: 16),
 
-                  if (druckBar < 150 || druckBar > 650) {
-                    AppToast.warning(
-                        isPSI
-                            ? t.text('pres5')
-                            : t.text('pres4')
-                    );
-                    SOLLDRUCK = 0;
-                    return;
-                  }else{
-                    istorque=false;
-                    SOLLDRUCK = druckBar; // In Bar speichern
-                    _sendCommand('-SETP $SOLLDRUCK\$');
-                    iskalibriert=false;
-                    FlutterForegroundTask.sendDataToTask({
-                      'event': 'ispressure',
-                    });
-                    Navigator.pushNamed(context, '/kalibration');
-                  }
+                AppButtons.primaryText(
+                  text: t.text('continue'),
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    int druckBar;
+                    final bool isPSI = DRUCK_EINHEIT == "PSI";
+                    if (isPSI) {
+                      SOLLDRUCKPSI = _eingabe;
+                      druckBar = (_eingabe / 14.5038).round();
+                      SOLLDRUCKBAR = druckBar;
+                    } else {
+                      druckBar = _eingabe;
+                      SOLLDRUCKBAR = _eingabe;
+                      SOLLDRUCKPSI = (_eingabe * 14.503).round();
+                    }
 
+                    if (druckBar < 150 || druckBar > 650) {
+                      AppToast.warning(
+                          isPSI ? t.text('pres5') : t.text('pres4')
+                      );
+                      SOLLDRUCK = 0;
+                      return;
+                    } else {
+                      istorque = false;
+                      SOLLDRUCK = druckBar;
+                      _sendCommand('-SETP $SOLLDRUCK\$');
+                      iskalibriert = false;
+                      FlutterForegroundTask.sendDataToTask({'event': 'ispressure'});
+                      Navigator.pushNamed(context, '/kalibration');
+                    }
+                  },
+                  verticalPadding: 16,
+                ),
 
-                },
-                verticalPadding: 16,
-              ),
-
-              AppButtons.primaryText(
-                text: t.text('zurueck'),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                verticalPadding: 16,
-              ),
-            ],
+                AppButtons.primaryText(
+                  text: t.text('zurueck'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  verticalPadding: 16,
+                ),
+              ],
+            ),
           ),
         ),
       ),

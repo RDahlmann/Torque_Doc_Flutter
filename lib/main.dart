@@ -119,6 +119,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return MediaQuery(
           data: mediaQuery.copyWith(
             textScaler: const TextScaler.linear(1.0), // ✅ System-Schrift ignorieren
+            boldText: false,
           ),
           child: child!,
         );

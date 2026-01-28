@@ -20,7 +20,7 @@ enum Customer{Standart,Alkitronik}
 
 class FileExporter {
 
-  static const activeCustomer= Customer.Standart;
+  static const activeCustomer= Customer.Alkitronik;
 
   static Uint8List get logoBytes{
       switch(activeCustomer){
@@ -44,7 +44,6 @@ class FileExporter {
       }
 
       final file = File('${directory.path}/$fileName');
-
       // Überschreiben, falls existiert
       if (await file.exists()) {
         await file.delete();

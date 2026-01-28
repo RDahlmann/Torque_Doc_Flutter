@@ -1,4 +1,9 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
@@ -41,7 +46,41 @@ class _HomeScreenState extends State<HomeScreen> {
     loadSavedData();
 
   }
+  Future<bool> ensureStoragePermission() async {
+    if (Platform.isAndroid) {
+      final sdkInt = (await DeviceInfoPlugin().androidInfo).version.sdkInt ?? 0;
 
+      if (sdkInt < 29) {
+        // Android < 10
+        final status = await Permission.storage.request();
+        return status.isGranted;
+      }
+      // Android 10+ regelt MediaStore automatisch, keine Permission nötig
+      return true;
+    }
+    // iOS fragt automatisch
+    return true;
+  }
+  Future<bool> checkProjectFileExists(String projectVar) async {
+    final now = DateTime.now();
+    final dateString =
+        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
+    final fileName = "${safeProjectVar}_$dateString.pdf";
+
+    String filePath;
+
+    if (Platform.isAndroid) {
+      final directory = Directory('/storage/emulated/0/Download/TorqueDoc');
+      filePath = '${directory.path}/$fileName';
+    } else {
+      final baseDir = await getApplicationDocumentsDirectory();
+      final dir = Directory('${baseDir.path}/TorqueDocData');
+      filePath = '${dir.path}/$fileName';
+    }
+
+    return File(filePath).exists();
+  }
   late final t = Provider.of<Translations>(context);
 
   Future<void> loadSavedData() async {
@@ -51,7 +90,9 @@ class _HomeScreenState extends State<HomeScreen> {
       UserName = prefs.getString('userName') ?? "";
       Projectnumber = prefs.getString('projectNumber') ?? "";
       Toleranz = prefs.getString('toleranz') ?? "";
-      Serialpump = prefs.getString('serpump') ?? "";
+      Serialpump = connectedDeviceName.isNotEmpty
+          ? connectedDeviceName
+          : prefs.getString('serpump') ?? ""; // 🔹 BLE Name hat Priorität
       Serialhose = prefs.getString('serhose') ?? "";
       Serialtool = prefs.getString('sertool') ?? "";
       Tool = prefs.getString('tool') ?? "";
@@ -257,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void validateAndProceed() {
+  Future<void> validateAndProceed() async {
     final fields = Provider.of<FieldSettings>(context, listen: false);
     final t = Provider.of<Translations>(context, listen: false); // ⚡ wichtig
 
@@ -287,6 +328,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (Tool.isEmpty) {
       AppToast.warning(t.text('tool_insert'));
+      return;
+    }
+    // 🔹 Storage Permission abfragen
+    bool permissionGranted = await ensureStoragePermission();
+    if (!permissionGranted) {
+      AppToast.warning("Speicherzugriff benötigt!");
+      return;
+    }
+    bool exists = await checkProjectFileExists(Projectnumber);
+    if (exists) {
+      AppToast.warning("Ein Protokoll für dieses Projekt existiert bereits!");
       return;
     }
     Navigator.pushNamed(context, '/choose');

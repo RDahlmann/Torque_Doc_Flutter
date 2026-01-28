@@ -4,6 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
+import '../globals.dart';
 import '../main.dart';
 import '../utils/translation.dart';
 import '../widgets/app_buttons.dart';
@@ -99,7 +100,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       final id = data['id'] as String?;
       final name = data['name'] as String?;
       if (id == null) return;
-
+      connectedDeviceName = data['name'] ?? "";
       final newDevice = DeviceData(id: id, name: name ?? id);
 
       setState(() {

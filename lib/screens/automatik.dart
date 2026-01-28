@@ -517,6 +517,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
               AppButtons.primaryText(
                 text: t.text('zurueck'),
                 onPressed: () {
+                  isauto=false;
                   isrunning = false;
                   isaborted1 = false;
                   isaborted2 = false;
@@ -663,6 +664,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
               AppButtons.primaryText(
                 text: t.text('zurueck'),
                 onPressed: () {
+                  isauto=false;
                   isrunning = false;
                   isaborted1 = false;
                   isaborted2 = false;
@@ -822,6 +824,7 @@ class _Autoscreenstate  extends State<Autoscreen> {
               AppButtons.primaryText(
                 text: t.text('zurueck'),
                 onPressed: () {
+                  isauto=false;
                   isrunning = false;
                   isaborted1 = false;
                   isaborted2 = false;

@@ -40,9 +40,11 @@ class BleForegroundTask extends TaskHandler {
     // Scan starten und Ergebnisse senden
     FlutterBluePlus.scanResults.listen((results) {
       for (var r in results) {
-        if (r.device.name.isNotEmpty && !devices.any((d) => d.id == r.device.id)) {
+        if (r.device.name.isNotEmpty &&
+            r.device.name.startsWith('TD') &&       // 🔹 nur TD-Geräte
+            !devices.any((d) => d.id == r.device.id)) {
           devices.add(r.device);
-          debugPrint("[BLE_TASK] Device found: ${r.device.name} (${r.device.id.id})");
+          debugPrint("[BLE_TASK] TD Device found: ${r.device.name} (${r.device.id.id})");
 
           FlutterForegroundTask.sendDataToMain({
             'event': 'deviceFound',

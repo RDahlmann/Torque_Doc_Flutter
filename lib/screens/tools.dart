@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,9 +60,14 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     // Kundencode laden
     final code = prefs.getString('lastCustomerCode');
     debugPrint("[DEBUG] Loaded customerCode: $code");
-    if (code != null) {
+   /* if (code != null) {
       customerCodeController.text = code;
+    }*/ //Standart
+    if (code != null && code.startsWith('10019')) {
+      // Nur die letzten 5 Stellen ins TextField schreiben
+      customerCodeController.text = code.substring(5);
     }
+
 
     // Tools laden
     final jsonStr = prefs.getString('tools');
@@ -90,7 +96,9 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
   /// Tools importieren
   void _importTools() async {
-    final code = customerCodeController.text.trim();
+    //final code = customerCodeController.text.trim(); //Standart
+    final code = '10019${customerCodeController.text.trim()}'; //Alki
+
     if (code.length != 10) {
       setState(() {
         errorMessage = t.text('tools1');
@@ -217,6 +225,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
               AppButtons.primaryText(
                 text: t.text('weiter'),
                 onPressed: () {
+                  FocusScope.of(context).unfocus();
                   if (selectedTool == null) return;
 
                   final rawInput = int.tryParse(torqueController.text);
@@ -308,12 +317,31 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                 controller: customerCodeController,
                 decoration: InputDecoration(
                   labelText: t.text('tools8'),
+                  hintText: 'XXXXX', // zeigt optisch, dass 10019 fix ist
+                  prefixText: '10019', // immer vorne angezeigt
+                  errorText: errorMessage,
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(5), // nur die letzten 5 Stellen
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                onChanged: (v) async {
+                  final prefs = await SharedPreferences.getInstance();
+                  prefs.setString('lastCustomerCode', '10019$v'); // Prefix beim Speichern
+                },
+              ),//Alki
+              /*TextField(
+                controller: customerCodeController,
+                decoration: InputDecoration(
+                  labelText: t.text('tools8'),
                   hintText: t.text('tools9'),
                   errorText: errorMessage,
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-              ),
+              ),*/ //Standart
 
               const SizedBox(height: 16),
 
