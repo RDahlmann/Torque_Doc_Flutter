@@ -20,7 +20,7 @@ enum Customer{Standart,Alkitronik}
 
 class FileExporter {
 
-  static const activeCustomer= Customer.Alkitronik;
+  static const activeCustomer= Customer.Standart;
 
   static Uint8List get logoBytes{
       switch(activeCustomer){

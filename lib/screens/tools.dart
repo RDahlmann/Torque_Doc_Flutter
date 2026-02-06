@@ -96,8 +96,8 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
   /// Tools importieren
   void _importTools() async {
-    //final code = customerCodeController.text.trim(); //Standart
-    final code = '10019${customerCodeController.text.trim()}'; //Alki
+    final code = customerCodeController.text.trim(); //Standart
+    //final code = '10019${customerCodeController.text.trim()}'; //Alki
 
     if (code.length != 10) {
       setState(() {
@@ -316,7 +316,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
               const SizedBox(height: 40),
 
-              TextField(
+              /*TextField(
                 controller: customerCodeController,
                 decoration: InputDecoration(
                   labelText: t.text('tools8'),
@@ -334,8 +334,8 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                   final prefs = await SharedPreferences.getInstance();
                   prefs.setString('lastCustomerCode', '10019$v'); // Prefix beim Speichern
                 },
-              ),//Alki
-              /*TextField(
+              ),*///Alki
+              TextField(
                 controller: customerCodeController,
                 decoration: InputDecoration(
                   labelText: t.text('tools8'),
@@ -344,7 +344,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
-              ),*/ //Standart
+              ),//Standart
 
               const SizedBox(height: 16),
 
