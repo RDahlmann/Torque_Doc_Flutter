@@ -65,8 +65,8 @@ class _AppTemplateState extends State<AppTemplate> {
               padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02, vertical: 4),
               child: Row(
                 children: [
-                  Image.asset('assets/logosd.jpg', height: logoHeight),//Standart
-                  //Image.asset('assets/logoalki.jpg', height: logoHeight),//Alkitronik
+                  //Image.asset('assets/logosd.jpg', height: logoHeight),//Standart
+                  Image.asset('assets/logoalki.jpg', height: logoHeight),//Alkitronik
                   SizedBox(width: screenWidth * 0.02),
                   Expanded(
                     child: Center(
@@ -124,7 +124,7 @@ class _AppTemplateState extends State<AppTemplate> {
                 child: widget.child,
               ),
             ),
-            Padding(
+            /*Padding(
               padding: const EdgeInsets.all(16.0),
               child: GestureDetector(
                 onTap: () async {
@@ -138,8 +138,8 @@ class _AppTemplateState extends State<AppTemplate> {
                   ],
                 ),
               ),
-            ), //Standart
-            /*Padding(
+            ), *///Standart
+            Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -195,7 +195,7 @@ class _AppTemplateState extends State<AppTemplate> {
                   ),
                 ],
               ),
-            ),*///Alkitronik
+            ),//Alkitronik
           ],
         ),
       ),

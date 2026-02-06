@@ -34,14 +34,14 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     // Kundencode laden
-    final savedCustomer = prefs.getString('customerCode');
+    /*final savedCustomer = prefs.getString('customerCode');
     if (savedCustomer != null) {
       _customerController.text = savedCustomer;
-    } //Standart
-    /*final savedCustomer = prefs.getString('customerCode');
+    }*/ //Standart
+    final savedCustomer = prefs.getString('customerCode');
     if (savedCustomer != null && savedCustomer.startsWith('10019')) {
       _customerController.text = savedCustomer.substring(5); // nur die letzten 5 Ziffern
-    }*///Alki
+    }//Alki
 
     // Druckwerte laden
     final savedPressure = prefs.getString('saved_pressure_values');
@@ -84,21 +84,21 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
     final name = _nameController.text.trim();
     final serial = _serialController.text.trim();
 
-    if (customer.length != 10 || name.isEmpty || serial.isEmpty) {
+    /*if (customer.length != 10 || name.isEmpty || serial.isEmpty) {
       final te = Provider.of<Translations>(context, listen: false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(te.text('upl1'))),
       );
       return;
-    }//Standart
-    /*final fullCustomerCode = '10019${_customerController.text}';
+    }*///Standart
+    final fullCustomerCode = '10019${_customerController.text}';
     if (fullCustomerCode.length != 10 || name.isEmpty || serial.isEmpty) {
       final te = Provider.of<Translations>(context, listen: false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(te.text('upl1'))),
       );
       return;
-    }*///Alkitronik
+    }//Alkitronik
 
     List<int> pressure = [];
     List<int> torque = [];
@@ -137,20 +137,20 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
       return;
     }
 
-    final payload = {
+   /* final payload = {
       'customer_code': customer,
       'tool_name': name,
       'serial_number': serial,
       'torque': jsonEncode(torque),
       'pressure': jsonEncode(pressure),
-    };//Standart
-    /*final payload = {
+    };*///Standart
+    final payload = {
       'customer_code': fullCustomerCode,
       'tool_name': name,
       'serial_number': serial,
       'torque': jsonEncode(torque),
       'pressure': jsonEncode(pressure),
-    }; *///Alki
+    }; //Alki
     setState(() => isUploading = true);
 
     try {
@@ -165,8 +165,8 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
 
       if (data['status'] == 'ok') {
         final prefs = await SharedPreferences.getInstance();
-        prefs.setString('customerCode', customer);//Standart
-        //prefs.setString('customerCode', fullCustomerCode);//Alki
+        //prefs.setString('customerCode', customer);//Standart
+        prefs.setString('customerCode', fullCustomerCode);//Alki
         final te = Provider.of<Translations>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(te.text('upl4'))),
@@ -216,7 +216,7 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-           TextField(
+          /* TextField(
               controller: _customerController,
               decoration: InputDecoration(
                 labelText: te.text('upl5'),
@@ -230,8 +230,8 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
                     'customerCode', _customerController.text.trim());
               },
             ),
-            //Standart
-           /* TextField(
+            *///Standart
+            TextField(
               controller: _customerController,
               decoration: InputDecoration(
                 labelText: te.text('upl5'),
@@ -248,7 +248,7 @@ class _UploadToolScreenState extends State<UploadToolScreen> {
                 final prefs = await SharedPreferences.getInstance();
                 prefs.setString('customerCode', '10019$v'); // Prefix hinzufügen beim Speichern
               },
-            ),*///Alkitronik
+            ),//Alkitronik
             SizedBox(height: 12),
             TextField(
               controller: _nameController,
