@@ -102,7 +102,7 @@ class _pressurescreenstate extends State<pressurescreen> {
                       SOLLDRUCKPSI = (_eingabe * 14.503).round();
                     }
 
-                    if (druckBar < 150 || druckBar > 600) {
+                    if (druckBar < 150 || druckBar > 680) {
                       AppToast.warning(
                           isPSI ? t.text('pres5') : t.text('pres4')
                       );

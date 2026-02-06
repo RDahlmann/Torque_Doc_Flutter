@@ -14,15 +14,15 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.stephandahlmann.torquedoc"
+    namespace ="com.stephandahlmann.torquedoc"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.stephandahlmann.torquedoc" // Standard, oder "com.stephandahlmann.torquedocalkitronic" für Alkitronik
+        applicationId = "com.stephandahlmann.torquedocalkitronic"//"com.stephandahlmann.torquedoc" // Standard, oder "com.stephandahlmann.torquedocalkitronic" für Alkitronik
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.0"
+        versionCode = 5
+        versionName = "1.0.1"
     }
 
     compileOptions {
