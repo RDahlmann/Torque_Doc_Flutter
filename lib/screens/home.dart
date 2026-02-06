@@ -131,6 +131,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return WillPopScope(
       onWillPop: () async => false,
       child: AppTemplate(
+      child: GestureDetector(
+      behavior: HitTestBehavior.translucent, // 🔹 auch leere Bereiche erfassen
+      onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,6 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
               AppButtons.primaryText(
                 text: t.text('continue'),
                 onPressed: (){
+                  FocusScope.of(context).unfocus();
                   validateAndProceed();
 
                 },
@@ -294,6 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

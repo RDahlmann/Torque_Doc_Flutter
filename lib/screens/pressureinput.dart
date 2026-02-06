@@ -47,8 +47,8 @@ class _pressurescreenstate extends State<pressurescreen> {
   Widget build(BuildContext context) {
     final bool isPSI = DRUCK_EINHEIT == "PSI";
     final String unitLabel = isPSI ? "PSI" : "Bar";
-    final int minDruck = isPSI ? (150 * 14.5038).round() : 150; // min in bar
-    final int maxDruck = isPSI ? (650 * 14.5038).round() : 650; // max in bar
+    final int minDruck = isPSI ? (100 * 14.5038).round() : 100; // min in bar
+    final int maxDruck = isPSI ? (600 * 14.5038).round() : 600; // max in bar
 
     return WillPopScope(
       onWillPop: () async => false,
@@ -102,7 +102,7 @@ class _pressurescreenstate extends State<pressurescreen> {
                       SOLLDRUCKPSI = (_eingabe * 14.503).round();
                     }
 
-                    if (druckBar < 150 || druckBar > 650) {
+                    if (druckBar < 100 || druckBar > 600) {
                       AppToast.warning(
                           isPSI ? t.text('pres5') : t.text('pres4')
                       );

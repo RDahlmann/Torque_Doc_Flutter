@@ -164,6 +164,9 @@ class _Toolsscreenstate extends State<Toolsscreen> {
     return WillPopScope(
       onWillPop: () async => false,
       child: AppTemplate(
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent, // 🔹 auch leere Bereiche erfassen
+       onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -261,7 +264,7 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
                   final pressure = interpolatePressure(selectedTool!, inputTorque.toDouble());
 
-                  if (pressure != null && (pressure < 150 || pressure > 650)) {
+                  if (pressure != null && (pressure < 100 || pressure > 680)) {
                     String errorText = t.textArgs(
                       'tools6',
                       {'value': pressure.toStringAsFixed(2)},
@@ -347,14 +350,18 @@ class _Toolsscreenstate extends State<Toolsscreen> {
 
               AppButtons.primaryText(
                 text: t.text('tools10'),
-                onPressed: _importTools,
-                verticalPadding: 16,
+                onPressed: (){
+                  FocusScope.of(context).unfocus();
+                  _importTools;
+                  },
+              verticalPadding: 16,
               ),
 
-              const SizedBox(height: 24),
+    const SizedBox (height: 24),
             ],
           ),
         ),
+      ),
       ),
     );
   }
