@@ -96,10 +96,10 @@ class Translations extends ChangeNotifier {
       'menu2':'Manuelles verschrauben',
       'menu3':'Zurück zur Druckauswahl',
 
-      'pres1':'Druckeingabe 100 Bar - 680 bar',
+      'pres1':'Druckeingabe 150 Bar - 680 bar',
       'pres2':'Druckeingabe 2176 PSI - 9427 PSI',
       'pres3':'Bitte geben Sie den Druck ein',
-      'pres4':'Solldruck muss zwischen 100 und 680 bar liegen',
+      'pres4':'Solldruck muss zwischen 150 und 680 bar liegen',
       'pres5':'Solldruck muss zwischen 2716 und 9427 PSI liegen',
 
       'set1':'Sprache auswählen',
@@ -122,7 +122,7 @@ class Translations extends ChangeNotifier {
       'tools3':'Drehmoment (Nm)',
       'tools4':'Bitte gültiges Drehmoment eingeben',
       'tools5':'Fehler: Drehmoment außerhalb des Bereichs ({minTorque}-{maxTorque} Nm)',
-      'tools6':'Fehler: interpolierter Druckwert {value} bar außerhalb des Bereichs (100-680 bar)',
+      'tools6':'Fehler: interpolierter Druckwert {value} bar außerhalb des Bereichs (150-680 bar)',
       'tools7':'Interpolierter Druck: {value} bar',
       'tools8':'Kundencode',
       'tools9':'10-stelliger Kundencode',
@@ -234,10 +234,10 @@ class Translations extends ChangeNotifier {
       'menu2': 'Manual bolting',
       'menu3': 'Back to pressure selection',
 
-      'pres1': 'Pressure input 100 bar - 680 bar',
+      'pres1': 'Pressure input 150 bar - 680 bar',
       'pres2': 'Pressure input 2176 PSI - 9427 PSI',
       'pres3': 'Please enter the pressure',
-      'pres4': 'Target pressure must be between 100 and 680 bar',
+      'pres4': 'Target pressure must be between 150 and 680 bar',
       'pres5': 'Target pressure must be between 2716 and 9427 PSI',
 
       'set1': 'Select language',
@@ -260,7 +260,7 @@ class Translations extends ChangeNotifier {
       'tools3': 'Torque ',
       'tools4': 'Please enter a valid torque value',
       'tools5': 'Error: Torque out of range ({minTorque}-{maxTorque} Nm)',
-      'tools6': 'Error: Interpolated pressure value {value} bar out of range (100-680 bar)',
+      'tools6': 'Error: Interpolated pressure value {value} bar out of range (150-680 bar)',
       'tools7': 'Interpolated pressure: {value} bar',
       'tools8': 'Customer code',
       'tools9': '10-digit customer code',
