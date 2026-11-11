@@ -65,39 +65,48 @@ class _AppTemplateState extends State<AppTemplate> {
               padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02, vertical: 4),
               child: Row(
                 children: [
-                  //Image.asset('assets/logosd.jpg', height: logoHeight),//Standart
-                  Image.asset('assets/logoalki.jpg', height: logoHeight),//Alkitronik
+                  Image.asset('assets/logosd.jpg', height: logoHeight),//Standart
+                  //Image.asset('assets/logoalki.jpg', height: logoHeight),//Alkitronik
                   SizedBox(width: screenWidth * 0.02),
                   Expanded(
                     child: Center(
-                      child: GestureDetector(
+                      child:GestureDetector(
                         onTap: () async {
-                          await FlutterForegroundTask.stopService();
-                          startBleTask();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const BluetoothScreen(isInitialScreen: false),
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.circle,
-                              size: statusFontSize * 1.4,
-                              color: isConnected ? Colors.green : Colors.red,
-                            ),
-                            SizedBox(width: screenWidth * 0.01),
-                            Text(
-                              isConnected ? t.text('temp1') : t.text('temp2'),
-                              style: TextStyle(fontSize: statusFontSize),
-                            ),
-                          ],
+                  await FlutterForegroundTask.stopService();
+                  startBleTask();
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                  builder: (_) => const BluetoothScreen(
+                  isInitialScreen: false,
+                  ),
+                  ),
+                  );
+                  },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isConnected
+                              ? Icons.bluetooth_connected
+                              : Icons.bluetooth_disabled,
+                          size: statusFontSize * 1.5,
+                          color: isConnected ? Colors.green : Colors.red,
                         ),
-                      ),
+                        SizedBox(width: screenWidth * 0.01),
+                        Text(
+                          isConnected ? t.text('temp1') : t.text('temp2'),
+                          style: TextStyle(
+                            fontSize: statusFontSize,
+                            fontWeight: FontWeight.w600,
+                            color: isConnected ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+
+      ),
                   ),
                   if (!widget.hideSettingsIcon)
                     IconButton(
@@ -124,7 +133,7 @@ class _AppTemplateState extends State<AppTemplate> {
                 child: widget.child,
               ),
             ),
-            /*Padding(
+            Padding(
               padding: const EdgeInsets.all(16.0),
               child: GestureDetector(
                 onTap: () async {
@@ -138,8 +147,8 @@ class _AppTemplateState extends State<AppTemplate> {
                   ],
                 ),
               ),
-            ), *///Standart
-            Padding(
+            ), //Standart
+            /*Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -195,7 +204,7 @@ class _AppTemplateState extends State<AppTemplate> {
                   ),
                 ],
               ),
-            ),//Alkitronik
+            ),Alkitronik*/
           ],
         ),
       ),

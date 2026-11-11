@@ -1,26 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/pdf.dart' as pw;
 import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
-import 'dart:typed_data';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:cross_file/cross_file.dart';
-import 'package:provider/provider.dart';
-import 'package:torquedoc/utils/translation.dart';
 import 'package:csv/csv.dart';
-import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:torquedoc/utils/translation.dart';
 
-enum Customer{Standart,Alkitronik}
+enum Customer { Standart, Alkitronik }
 
 class FileExporter {
-
-  static const activeCustomer= Customer.Alkitronik;
+  static const activeCustomer = Customer.Alkitronik;
 
   static Uint8List get logoBytes{
       switch(activeCustomer){
@@ -30,447 +24,1010 @@ class FileExporter {
   }
 
 
-  static double? _firstBarWidth; // globale Variable innerhalb der Klasse
+  // ============================================================
+  // PDF-FARBEN
+  // ============================================================
+
+  static const PdfColor _navy = PdfColor(0.08, 0.16, 0.29);
+  static const PdfColor _blue = PdfColor(0.15, 0.35, 0.58);
+  static const PdfColor _lightBlue = PdfColor(0.93, 0.96, 0.99);
+  static const PdfColor _veryLightBlue = PdfColor(0.97, 0.98, 1.00);
+  static const PdfColor _border = PdfColor(0.84, 0.88, 0.92);
+  static const PdfColor _textColor = PdfColor(0.18, 0.22, 0.28);
+  static const PdfColor _mutedText = PdfColor(0.42, 0.47, 0.54);
+  static const PdfColor _green = PdfColor(0.12, 0.48, 0.30);
+  static const PdfColor _lightGreen = PdfColor(0.87, 0.95, 0.89);
+  static const PdfColor _red = PdfColor(0.72, 0.19, 0.19);
+  static const PdfColor _lightRed = PdfColor(0.99, 0.89, 0.88);
+
+  static double? _firstBarWidth;
+
+  // ============================================================
+  // ANDROID-SPEICHERFUNKTION
+  // ============================================================
 
   static Future<String> _saveToAndroidDownloads({
     required Uint8List bytes,
     required String fileName,
   }) async {
     try {
-      Directory directory = Directory('/storage/emulated/0/Download/TorqueDoc');
+      final directory =
+      Directory('/storage/emulated/0/Download/TorqueDoc');
 
       if (!await directory.exists()) {
         await directory.create(recursive: true);
       }
 
       final file = File('${directory.path}/$fileName');
-      // Überschreiben, falls existiert
+
       if (await file.exists()) {
         await file.delete();
       }
 
       await file.writeAsBytes(bytes);
-      debugPrint("✅ Datei gespeichert: ${file.path}");
+
+      debugPrint('Datei gespeichert: ${file.path}');
+
       return file.path;
     } catch (e, st) {
-      debugPrint("❌ Fehler beim Speichern der Datei: $fileName\n$e\n$st");
+      debugPrint('Fehler beim Speichern von $fileName: $e\n$st');
       rethrow;
     }
   }
 
+  // ============================================================
+  // PDF-HELFER: PROJEKTDATEN
+  // ============================================================
 
+  static pw.Widget _buildProjectInfo({
+    required Translations t,
+    required String userName,
+    required String projectVar,
+    required String serialPump,
+    required String serialHose,
+    required String serialTool,
+    required String tool,
+    required String toleranz,
+    required String dateString,
+    required pw.Font regular,
+    required pw.Font semiBold,
+  }) {
+    final rows = <List<String>>[
+      if (userName.isNotEmpty) [t.text('home1'), userName],
+      if (projectVar.isNotEmpty) [t.text('home3'), projectVar],
+      if (serialPump.isNotEmpty) [t.text('home9'), serialPump],
+      if (serialHose.isNotEmpty) [t.text('home11'), serialHose],
+      if (serialTool.isNotEmpty) [t.text('home13'), serialTool],
+      if (tool.isNotEmpty) [t.text('home15'), tool],
+      if (toleranz.isNotEmpty) [t.text('home7'), '$toleranz %'],
+      [t.text('pdf6'), dateString],
+    ];
 
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        color: _veryLightBlue,
+        border: pw.Border.all(color: _border, width: 0.7),
+        borderRadius: const pw.BorderRadius.all(
+          pw.Radius.circular(7),
+        ),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            t.text('home3'),
+            style: pw.TextStyle(
+              font: semiBold,
+              fontSize: 12,
+              color: _navy,
+            ),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Table(
+            columnWidths: {
+              0: const pw.FixedColumnWidth(135),
+              1: const pw.FlexColumnWidth(),
+            },
+            children: List.generate(rows.length, (index) {
+              final row = rows[index];
 
+              return pw.TableRow(
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                    child: pw.Text(
+                      row[0],
+                      style: pw.TextStyle(
+                        font: semiBold,
+                        fontSize: 9,
+                        color: _mutedText,
+                      ),
+                    ),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                    child: pw.Text(
+                      row[1],
+                      style: pw.TextStyle(
+                        font: regular,
+                        fontSize: 9,
+                        color: _textColor,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
 
+  // ============================================================
+  // PDF-HELFER: SEITENFUSS
+  // ============================================================
+
+  static pw.Widget _buildFooter({
+    required String projectVar,
+    required String dateString,
+    required Translations t,
+    required pw.Font regular,
+    int? pageNumber,
+    int? pagesCount,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.only(top: 7),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: _border, width: 0.7),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Expanded(
+            child: pw.Text(
+              '${t.text('home3')}: $projectVar',
+              style: pw.TextStyle(
+                font: regular,
+                fontSize: 8,
+                color: _mutedText,
+              ),
+              maxLines: 1,
+            ),
+          ),
+          pw.Text(
+            '${t.text('pdf6')}: $dateString',
+            style: pw.TextStyle(
+              font: regular,
+              fontSize: 8,
+              color: _mutedText,
+            ),
+          ),
+          if (pageNumber != null && pagesCount != null) ...[
+            pw.SizedBox(width: 12),
+            pw.Text(
+              '$pageNumber / $pagesCount',
+              style: pw.TextStyle(
+                font: regular,
+                fontSize: 8,
+                color: _mutedText,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // PDF-HELFER: DIAGRAMM
+  // ============================================================
 
   static pw.Widget buildBarChart({
-  required List<double> values,
-  required List<bool> isOk,
-  required List<String> labels,
-  required PdfFont font,
-  required String toleranz,
-  double maxHeight = 300,
-  double maxPercent = 120,
-  bool isFirstChart = false,
+    required List<double> values,
+    required List<bool> isOk,
+    required List<String> labels,
+    required PdfFont font,
+    required String toleranz,
+    double maxHeight = 300,
+    double maxPercent = 120,
+    bool isFirstChart = false,
   }) {
-  final tol = double.tryParse(toleranz) ?? 0;
-  final upperTol = 100 + tol;
-  final lowerTol = 100 - tol;
+    final tol = double.tryParse(toleranz) ?? 0;
+    final upperTol = 100 + tol;
+    final lowerTol = 100 - tol;
 
-  return pw.Container(
-  height: maxHeight + 40,
-  padding: const pw.EdgeInsets.only(left: 40, bottom: 20),
-  child: pw.CustomPaint(
-  size: PdfPoint(double.infinity, maxHeight),
-  painter: (pw.PdfGraphics canvas, PdfPoint size) {
-  final barCount = values.length;
+    return pw.Container(
+      height: maxHeight + 48,
+      padding: const pw.EdgeInsets.only(
+        left: 40,
+        right: 8,
+        bottom: 20,
+        top: 8,
+      ),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        border: pw.Border.all(color: _border, width: 0.7),
+        borderRadius: const pw.BorderRadius.all(
+          pw.Radius.circular(6),
+        ),
+      ),
+      child: pw.CustomPaint(
+        size: PdfPoint(double.infinity, maxHeight),
+        painter: (pw.PdfGraphics canvas, PdfPoint size) {
+          final barCount = values.length;
 
-  double barWidth;
-  if (isFirstChart || _firstBarWidth == null) {
-  barWidth = size.x / (barCount * 1.5);
-  if (barCount < 4) {
-  barWidth = (size.x / 4) * 0.8;
+          if (barCount == 0) return;
+
+          double barWidth;
+
+          if (isFirstChart || _firstBarWidth == null) {
+            barWidth = size.x / (barCount * 1.5);
+
+            if (barCount < 4) {
+              barWidth = (size.x / 4) * 0.8;
+            }
+
+            _firstBarWidth = barWidth;
+          } else {
+            barWidth = _firstBarWidth!;
+          }
+
+          const yStep = 10;
+
+          // Hintergrundraster und Y-Achsenbeschriftung
+          for (int i = 0; i <= maxPercent; i += yStep) {
+            final y = (i / maxPercent) * size.y;
+
+            canvas.setLineWidth(0.35);
+            canvas.setStrokeColor(_border);
+            canvas.moveTo(0, y);
+            canvas.lineTo(size.x, y);
+            canvas.strokePath();
+
+            canvas.setFillColor(_mutedText);
+            canvas.drawString(
+              font,
+              8,
+              '$i%',
+              -30,
+              y - 3,
+            );
+          }
+
+          // Toleranzbereich
+          canvas.setLineWidth(1);
+
+          for (final tolY in [lowerTol, upperTol]) {
+            if (tolY < 0 || tolY > maxPercent) continue;
+
+            final y = (tolY / maxPercent) * size.y;
+            const dashLength = 4.0;
+            double x = 0;
+
+            canvas.setStrokeColor(_blue);
+
+            while (x < size.x) {
+              canvas.moveTo(x, y);
+              canvas.lineTo(
+                (x + dashLength).clamp(0, size.x),
+                y,
+              );
+              canvas.strokePath();
+              x += dashLength * 2;
+            }
+          }
+
+          // Messbalken und Nummern
+          for (int i = 0; i < barCount; i++) {
+            final percent = values[i].clamp(0, maxPercent);
+            final barHeight = (percent / maxPercent) * size.y;
+            final x = i * barWidth * 1.5;
+
+            canvas.setFillColor(
+              isOk[i] ? _green : _red,
+            );
+
+            canvas.drawRect(
+              x,
+              0,
+              barWidth,
+              barHeight,
+            );
+            canvas.fillPath();
+
+            canvas.setFillColor(_textColor);
+
+            canvas.drawString(
+              font,
+              7,
+              labels[i],
+              x,
+              -10,
+            );
+          }
+
+          // Achsen
+          canvas.setLineWidth(0.8);
+          canvas.setStrokeColor(_mutedText);
+
+          canvas.moveTo(0, 0);
+          canvas.lineTo(size.x, 0);
+
+          canvas.moveTo(0, 0);
+          canvas.lineTo(0, size.y);
+
+          canvas.strokePath();
+        },
+      ),
+    );
   }
-  _firstBarWidth = barWidth;
-  } else {
-  barWidth = _firstBarWidth!;
-  }
 
-  final yStep = 10;
+  // ============================================================
+  // PDF-EXPORT
+  // ============================================================
 
-  // Y-Achse
-  canvas.setLineWidth(0.5);
-  canvas.setStrokeColor(PdfColors.black);
-  for (int i = 0; i <= maxPercent; i += yStep) {
-  final y = (i / maxPercent) * size.y;
-  canvas.moveTo(0, y);
-  canvas.lineTo(size.x, y);
-  canvas.strokePath();
-
-  canvas.setFillColor(PdfColors.black);
-  canvas.drawString(font, 8, '$i%', -30, y - 3);
-  }
-
-  // Balken + Toleranzlinien + X-Labels
-  for (int i = 0; i < barCount; i++) {
-  final percent = values[i].clamp(0, maxPercent);
-  final barHeight = (percent / maxPercent) * size.y;
-  final color = isOk[i] ? PdfColors.green : PdfColors.red;
-
-  canvas.setFillColor(color);
-  canvas.drawRect(i * barWidth * 1.5, 0, barWidth, barHeight);
-  canvas.fillPath();
-
-  // Toleranzlinien
-  canvas.setLineWidth(1.5);
-  canvas.setStrokeColor(PdfColors.grey);
-  final dashLength = 3.0;
-  for (final tolY in [lowerTol, upperTol]) {
-  final y = (tolY / maxPercent) * size.y;
-  double x = 0;
-  while (x < size.x) {
-  canvas.moveTo(x, y);
-  canvas.lineTo((x + dashLength).clamp(0, size.x), y);
-  canvas.strokePath();
-  x += dashLength * 2;
-  }
-  }
-
-  // X-Achse Label
-  canvas.setFillColor(PdfColors.black);
-  final label = labels[i];
-  canvas.drawString(font, 8, label, i * barWidth * 1.5, -10);
-  }
-
-  // Achsenlinien
-  canvas.moveTo(0, 0);
-  canvas.lineTo(size.x, 0);
-  canvas.moveTo(0, 0);
-  canvas.lineTo(0, size.y);
-  canvas.strokePath();
-  },
-  ),
-  );
-  }
-
-  /// PDF-Erstellung
   static Future<String?> exportPdfInBackground({
-  required Translations t,
-  required List<Map<String, dynamic>> data,
-  required String projectVar,
-  required String userName,
-  required String serialPump,
-  required String serialHose,
-  required String serialTool,
-  required String tool,
-  required String toleranz,
-  required String Einheit,
-  required String EinheitD,
+    required Translations t,
+    required List<Map<String, dynamic>> data,
+    required String projectVar,
+    required String userName,
+    required String serialPump,
+    required String serialHose,
+    required String serialTool,
+    required String tool,
+    required String toleranz,
+    required String Einheit,
+    required String EinheitD,
   }) async {
-  if (data.isEmpty) return null;
+    if (data.isEmpty) return null;
 
-  final now = DateTime.now();
-  final dateString =
-  "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-  final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
-  final fileName = "${safeProjectVar}_$dateString.pdf";
+    final now = DateTime.now();
 
-  File? iosFile;
-  if (!Platform.isAndroid) {
-  final baseDir = await getApplicationDocumentsDirectory();
-  final dir = Directory('${baseDir.path}/TorqueDocData');
-  if (!await dir.exists()) await dir.create(recursive: true);
+    final dateString =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-  iosFile = File('${dir.path}/$fileName');
-  if (await iosFile.exists()) await iosFile.delete();
+    final safeProjectVar =
+    projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+
+    final fileName = '${safeProjectVar}_$dateString.pdf';
+
+    File? iosFile;
+
+    if (!Platform.isAndroid) {
+      final baseDir = await getApplicationDocumentsDirectory();
+      final dir = Directory('${baseDir.path}/TorqueDocData');
+
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+
+      iosFile = File('${dir.path}/$fileName');
+
+      if (await iosFile.exists()) {
+        await iosFile.delete();
+      }
+    }
+
+    final pdf = pw.Document();
+
+    // Schriftarten
+    final regularData =
+    await rootBundle.load('assets/fonts/barlowregular.ttf');
+    final myFontRegular = pw.Font.ttf(regularData);
+
+    final semiData =
+    await rootBundle.load('assets/fonts/barlowsemibold.ttf');
+    final myFontSemi = pw.Font.ttf(semiData);
+
+    final boldData =
+    await rootBundle.load('assets/fonts/barlowbold.ttf');
+    final myFontBold = pw.Font.ttf(boldData);
+
+    // Bestehende Berechnung der Prozentwerte bleibt erhalten
+    final percentValues = data.map((row) {
+      final soll = int.tryParse(row['Solldruck'].toString()) ?? 0;
+      final nenn = int.tryParse(row['Nenndruck'].toString()) ?? 0;
+
+      if (soll == 0) return 0.0;
+
+      return (nenn / soll) * 100.0;
+    }).toList();
+
+    final isOkList = data
+        .map((row) => row['IO'].toString().toUpperCase() == 'IO')
+        .toList();
+
+    final labels = data
+        .map((row) => '${row['Nr.'] ?? ''}')
+        .toList();
+
+    // Tabellenüberschriften
+    final headerNo = t.text('pdf1');
+    final headerTarget = t.textArgs('pdf2', {'Value': Einheit});
+    final headerActual = t.textArgs('pdf3', {'Value': Einheit});
+    final headerTargetTorque = t.textArgs('pdf4', {'Value': EinheitD});
+    final headerActualTorque = t.textArgs('pdf5', {'Value': EinheitD});
+    const headerIO = 'IO';
+
+    final headers = [
+      headerNo,
+      headerTarget,
+      headerActual,
+      headerTargetTorque,
+      headerActualTorque,
+      headerIO,
+    ];
+
+    // Tabelleninhalte bleiben erhalten
+    final tableRows = data.map((row) {
+      return [
+        '${row['Nr.'] ?? ''}',
+        '${row['Solldruck'] ?? ''}',
+        '${row['Nenndruck'] ?? ''}',
+        '${row['Solldrehmoment'] ?? ''}',
+        '${row['Nenndrehmoment'] ?? ''}',
+        '${row['IO'] ?? ''}',
+      ];
+    }).toList();
+
+    // ------------------------------------------------------------
+    // ERSTE SEITE: LOGO, PROJEKTDATEN UND MESSWERTTABELLE
+    // ------------------------------------------------------------
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(32, 28, 32, 32),
+        footer: (context) => _buildFooter(
+          projectVar: projectVar,
+          dateString: dateString,
+          t: t,
+          regular: myFontRegular,
+          pageNumber: context.pageNumber,
+          pagesCount: context.pagesCount,
+        ),
+        build: (context) => [
+          // Logo
+          pw.Container(
+            width: double.infinity,
+            height: 42,
+            alignment: pw.Alignment.centerLeft,
+            child: pw.Image(
+              pw.MemoryImage(logoBytes),
+              fit: pw.BoxFit.contain,
+            ),
+          ),
+
+          pw.SizedBox(height: 12),
+
+          // Titel
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.only(
+              left: 12,
+              top: 10,
+              bottom: 10,
+            ),
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                left: pw.BorderSide(
+                  color: _blue,
+                  width: 4,
+                ),
+              ),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  t.text('pdf7'),
+                  style: pw.TextStyle(
+                    font: myFontBold,
+                    fontSize: 21,
+                    color: _navy,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  '${t.text('home3')}: $projectVar',
+                  style: pw.TextStyle(
+                    font: myFontRegular,
+                    fontSize: 10,
+                    color: _mutedText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          pw.SizedBox(height: 16),
+
+          // Projektdaten
+          _buildProjectInfo(
+            t: t,
+            userName: userName,
+            projectVar: projectVar,
+            serialPump: serialPump,
+            serialHose: serialHose,
+            serialTool: serialTool,
+            tool: tool,
+            toleranz: toleranz,
+            dateString: dateString,
+            regular: myFontRegular,
+            semiBold: myFontSemi,
+          ),
+
+          pw.SizedBox(height: 18),
+
+          // Tabellenüberschrift
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Container(
+                width: 4,
+                height: 18,
+                decoration: const pw.BoxDecoration(
+                  color: _blue,
+                ),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Text(
+                t.text('pdf7'),
+                style: pw.TextStyle(
+                  font: myFontBold,
+                  fontSize: 15,
+                  color: _navy,
+                ),
+              ),
+            ],
+          ),
+
+          pw.SizedBox(height: 9),
+
+          // Messwerttabelle
+          pw.Table(
+            border: pw.TableBorder(
+              horizontalInside: const pw.BorderSide(
+                color: _border,
+                width: 0.5,
+              ),
+              verticalInside: const pw.BorderSide(
+                color: _border,
+                width: 0.5,
+              ),
+              top: const pw.BorderSide(
+                color: _navy,
+                width: 1,
+              ),
+              bottom: const pw.BorderSide(
+                color: _border,
+                width: 0.7,
+              ),
+              left: const pw.BorderSide(
+                color: _border,
+                width: 0.5,
+              ),
+              right: const pw.BorderSide(
+                color: _border,
+                width: 0.5,
+              ),
+            ),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(0.55),
+              1: const pw.FlexColumnWidth(1.15),
+              2: const pw.FlexColumnWidth(1.15),
+              3: const pw.FlexColumnWidth(1.45),
+              4: const pw.FlexColumnWidth(1.45),
+              5: const pw.FlexColumnWidth(0.65),
+            },
+            children: [
+              // Tabellenkopf
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(
+                  color: _navy,
+                ),
+                children: headers.map((header) {
+                  return pw.Container(
+                    alignment: pw.Alignment.center,
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 3,
+                      vertical: 9,
+                    ),
+                    child: pw.Text(
+                      header,
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        font: myFontSemi,
+                        fontSize: 8,
+                        color: PdfColors.white,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+
+              // Datenzeilen
+              ...List.generate(tableRows.length, (rowIndex) {
+                final row = tableRows[rowIndex];
+
+                final isOk =
+                    row[5].toString().toUpperCase() == 'IO';
+
+                return pw.TableRow(
+                  decoration: pw.BoxDecoration(
+                    color: rowIndex.isEven
+                        ? PdfColors.white
+                        : _veryLightBlue,
+                  ),
+                  children: List.generate(row.length, (columnIndex) {
+                    final cellText = row[columnIndex];
+
+                    // IO/NIO ausschließlich in der letzten Spalte einfärben
+                    if (columnIndex == 5) {
+                      return pw.Container(
+                        alignment: pw.Alignment.center,
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 3,
+                          vertical: 7,
+                        ),
+                        color: isOk ? _lightGreen : _lightRed,
+                        child: pw.Text(
+                          cellText,
+                          textAlign: pw.TextAlign.center,
+                          style: pw.TextStyle(
+                            font: myFontBold,
+                            fontSize: 8,
+                            color: isOk ? _green : _red,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return pw.Container(
+                      alignment: pw.Alignment.center,
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 3,
+                        vertical: 7,
+                      ),
+                      child: pw.Text(
+                        cellText,
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(
+                          font: myFontRegular,
+                          fontSize: 8.5,
+                          color: _textColor,
+                        ),
+                      ),
+                    );
+                  }),
+                );
+              }),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    // ------------------------------------------------------------
+    // DIAGRAMME
+    // ------------------------------------------------------------
+
+    const barsPerChart = 20;
+    const chartsPerPage = 2;
+    const chartHeight = 220.0;
+    const maxPercent = 120.0;
+
+    final List<List<double>> percentGroups = [];
+    final List<List<bool>> isOkGroups = [];
+    final List<List<String>> labelGroups = [];
+
+    for (int i = 0; i < percentValues.length; i += barsPerChart) {
+      final end = (i + barsPerChart > percentValues.length)
+          ? percentValues.length
+          : i + barsPerChart;
+
+      percentGroups.add(percentValues.sublist(i, end));
+      isOkGroups.add(isOkList.sublist(i, end));
+      labelGroups.add(labels.sublist(i, end));
+    }
+
+    for (int i = 0; i < percentGroups.length; i += chartsPerPage) {
+      final chartsThisPage = <pw.Widget>[];
+
+      for (
+      int j = i;
+      j < i + chartsPerPage && j < percentGroups.length;
+      j++
+      ) {
+        chartsThisPage.add(
+          pw.Container(
+            padding: const pw.EdgeInsets.only(bottom: 5),
+            child: pw.Row(
+              children: [
+                pw.Container(
+                  width: 4,
+                  height: 15,
+                  color: _blue,
+                ),
+                pw.SizedBox(width: 8),
+                pw.Text(
+                  t.text('pdf8'),
+                  style: pw.TextStyle(
+                    font: myFontBold,
+                    fontSize: 12,
+                    color: _navy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        chartsThisPage.add(
+          pw.SizedBox(height: 5),
+        );
+
+        chartsThisPage.add(
+          buildBarChart(
+            values: percentGroups[j],
+            isOk: isOkGroups[j],
+            labels: labelGroups[j],
+            font: PdfFont.helvetica(pdf.document),
+            maxHeight: chartHeight,
+            maxPercent: maxPercent,
+            toleranz: toleranz,
+            isFirstChart: i == 0 && j == 0,
+          ),
+        );
+
+        chartsThisPage.add(
+          pw.SizedBox(height: 15),
+        );
+      }
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.fromLTRB(32, 30, 32, 30),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                t.text('pdf7'),
+                style: pw.TextStyle(
+                  font: myFontBold,
+                  fontSize: 20,
+                  color: _navy,
+                ),
+              ),
+
+              pw.SizedBox(height: 4),
+
+              pw.Text(
+                '${t.text('home3')}: $projectVar',
+                style: pw.TextStyle(
+                  font: myFontRegular,
+                  fontSize: 9,
+                  color: _mutedText,
+                ),
+              ),
+
+              pw.SizedBox(height: 15),
+
+              // Legende
+              pw.Row(
+                children: [
+                  pw.Container(
+                    width: 9,
+                    height: 9,
+                    color: _green,
+                  ),
+                  pw.SizedBox(width: 5),
+                  pw.Text(
+                    'IO',
+                    style: pw.TextStyle(
+                      font: myFontRegular,
+                      fontSize: 9,
+                      color: _textColor,
+                    ),
+                  ),
+                  pw.SizedBox(width: 15),
+                  pw.Container(
+                    width: 9,
+                    height: 9,
+                    color: _red,
+                  ),
+                  pw.SizedBox(width: 5),
+                  pw.Text(
+                    'NIO',
+                    style: pw.TextStyle(
+                      font: myFontRegular,
+                      fontSize: 9,
+                      color: _textColor,
+                    ),
+                  ),
+                  pw.SizedBox(width: 15),
+                  pw.Container(
+                    width: 16,
+                    height: 1,
+                    color: _blue,
+                  ),
+                  pw.SizedBox(width: 5),
+                  pw.Text(
+                    '${toleranz} %',
+                    style: pw.TextStyle(
+                      font: myFontRegular,
+                      fontSize: 9,
+                      color: _textColor,
+                    ),
+                  ),
+                ],
+              ),
+
+              pw.SizedBox(height: 12),
+
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                  children: chartsThisPage,
+                ),
+              ),
+
+              _buildFooter(
+                projectVar: projectVar,
+                dateString: dateString,
+                t: t,
+                regular: myFontRegular,
+                pageNumber: null,
+                pagesCount: null,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ------------------------------------------------------------
+    // PDF SPEICHERN
+    // ------------------------------------------------------------
+
+    final pdfBytes = await pdf.save();
+
+    if (Platform.isAndroid) {
+      await _saveToAndroidDownloads(
+        bytes: pdfBytes,
+        fileName: fileName,
+      );
+
+      return 'Downloads/TorqueDoc/$fileName';
+    } else {
+      await iosFile!.writeAsBytes(pdfBytes);
+      return iosFile.path;
+    }
   }
 
-  final pdf = pw.Document();
+  // ============================================================
+  // CSV-EXPORT
+  // Funktionalität und CSV-Inhalte bleiben unverändert.
+  // ============================================================
 
-  // Fonts
-  final ttfData = await rootBundle.load('assets/fonts/barlowregular.ttf');
-  final myFontregular = pw.Font.ttf(ttfData);
-  final ttfDatasemi = await rootBundle.load('assets/fonts/barlowsemibold.ttf');
-  final myFontsemi = pw.Font.ttf(ttfDatasemi);
-  final ttfDatabold = await rootBundle.load('assets/fonts/barlowbold.ttf');
-  final myFontbold = pw.Font.ttf(ttfDatabold);
-
-  // Daten vorbereiten
-  final percentValues = data.map((row) {
-  final soll = int.tryParse(row['Solldruck'].toString()) ?? 0;
-  final nenn = int.tryParse(row['Nenndruck'].toString()) ?? 0;
-  if (soll == 0) return 0.0;
-  return (nenn / soll) * 100.0;
-  }).toList();
-
-  final isOkList = data.map((row) => row['IO'].toString().toUpperCase() == "IO").toList();
-  final labels = data.map((row) => "${row['Nr.'] ?? row['Nr.'] ?? ''}").toList();
-
-  final headerNo = t.text('pdf1');
-  final headerTarget = t.textArgs('pdf2', {'Value': Einheit});
-  final headerActual = t.textArgs('pdf3', {'Value': Einheit});
-  final headerTgtTrq = t.textArgs('pdf4', {'Value': EinheitD});
-  final headerActTrq = t.textArgs('pdf5', {'Value': EinheitD});
-  final headerIO = "IO";
-
-  final headers = [headerNo, headerTarget, headerActual, headerTgtTrq, headerActTrq, headerIO];
-
-  final tableRows = data.map((row) {
-  return [
-  "${row['Nr.'] ?? ''}",
-  "${row['Solldruck'] ?? ''}",
-  "${row['Nenndruck'] ?? ''}",
-  "${row['Solldrehmoment'] ?? ''}",
-  "${row['Nenndrehmoment'] ?? ''}",
-  row['IO'] ?? "",
-  ];
-  }).toList();
-
-  pdf.addPage(
-  pw.MultiPage(
-  pageFormat: PdfPageFormat.a4,
-  margin: const pw.EdgeInsets.fromLTRB(80, 20, 20, 20),
-  footer: (context) {
-  return pw.Container(
-  alignment: pw.Alignment.centerRight,
-  padding: const pw.EdgeInsets.only(right: 20, top: 5),
-  child: pw.Text(
-  '${t.text('home3')}: $projectVar    ${t.text('pdf6')}: $dateString',
-  style: pw.TextStyle(font: myFontregular, fontSize: 10, color: PdfColors.grey600),
-  ),
-  );
-  },
-  build: (context) => [
-  // Logo
-  pw.Container(
-  height: 30,
-  alignment: pw.Alignment.center,
-  child: pw.Image(pw.MemoryImage(logoBytes), fit: pw.BoxFit.contain),
-  ),
-  pw.SizedBox(height: 12),
-
-  // Projektdaten
-  pw.Table.fromTextArray(
-  headers: [],
-  data: [
-  if (userName.isNotEmpty) [t.text('home1'), userName],
-  if (projectVar.isNotEmpty) [t.text('home3'), projectVar],
-  if (serialPump.isNotEmpty) [t.text('home9'), serialPump],
-  if (serialHose.isNotEmpty) [t.text('home11'), serialHose],
-  if (serialTool.isNotEmpty) [t.text('home13'), serialTool],
-  if (tool.isNotEmpty) [t.text('home15'), tool],
-  if (toleranz.isNotEmpty) [t.text('home7'), '$toleranz %'],
-  [t.text('pdf6'), dateString]
-  ],
-  border: null,
-  cellPadding: const pw.EdgeInsets.only(bottom: 4),
-  columnWidths: {0: const pw.FixedColumnWidth(170), 1: const pw.FlexColumnWidth()},
-  cellStyle: pw.TextStyle(font: myFontbold, fontSize: 14),
-  ),
-  pw.SizedBox(height: 12),
-
-  // Messwerte Tabelle
-  pw.Text(t.text('pdf7'), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-  pw.SizedBox(height: 12),
-  pw.Table(
-  border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
-  columnWidths: {
-  0: const pw.FixedColumnWidth(20),
-  1: const pw.FixedColumnWidth(65),
-  2: const pw.FixedColumnWidth(65),
-  3: const pw.FixedColumnWidth(85),
-  4: const pw.FixedColumnWidth(85),
-  5: const pw.FixedColumnWidth(20),
-  },
-  children: [
-  pw.TableRow(
-  decoration: const pw.BoxDecoration(color: PdfColors.grey600),
-  children: headers.map(
-  (h) => pw.Padding(
-  padding: const pw.EdgeInsets.all(5),
-  child: pw.Text(
-  h,
-  textAlign: pw.TextAlign.center,
-  style: pw.TextStyle(
-  color: PdfColors.white, font: myFontsemi, fontSize: 8, fontWeight: pw.FontWeight.bold),
-  ),
-  ),
-  ).toList(),
-  ),
-  ...tableRows.map((row) {
-  final isOk = row[5].toString().toUpperCase() == "IO";
-  return pw.TableRow(
-  children: row.map((cellText) {
-  if (cellText == row[5]) {
-  return pw.Container(
-  alignment: pw.Alignment.center,
-  padding: const pw.EdgeInsets.all(5),
-  color: isOk ? PdfColors.green300 : PdfColors.red300,
-  child: pw.Text(
-  cellText,
-  style: pw.TextStyle(color: PdfColors.white, font: myFontregular, fontSize: 11),
-  ),
-  );
-  }
-  return pw.Padding(
-  padding: const pw.EdgeInsets.all(5),
-  child: pw.Text(cellText,
-  textAlign: pw.TextAlign.center,
-  style: pw.TextStyle(color: PdfColors.black, font: myFontregular, fontSize: 11)),
-  );
-  }).toList(),
-  );
-  }),
-  ],
-  ),
-  ],
-  ),
-  );
-
-  // Diagramme
-  const barsPerChart = 20;
-  const chartsPerPage = 2;
-  const chartHeight = 300.0;
-  const maxPercent = 120.0;
-
-  List<List<double>> percentGroups = [];
-  List<List<bool>> isOkGroups = [];
-  List<List<String>> labelGroups = [];
-
-  for (int i = 0; i < percentValues.length; i += barsPerChart) {
-  percentGroups.add(percentValues.sublist(i, (i + barsPerChart > percentValues.length) ? percentValues.length : i + barsPerChart));
-  isOkGroups.add(isOkList.sublist(i, (i + barsPerChart > isOkList.length) ? isOkList.length : i + barsPerChart));
-  labelGroups.add(labels.sublist(i, (i + barsPerChart > labels.length) ? labels.length : i + barsPerChart));
-  }
-
-  for (int i = 0; i < percentGroups.length; i += chartsPerPage) {
-  final chartsThisPage = <pw.Widget>[];
-  for (int j = i; j < i + chartsPerPage && j < percentGroups.length; j++) {
-  chartsThisPage.add(pw.SizedBox(height: 20));
-  chartsThisPage.add(buildBarChart(
-  values: percentGroups[j],
-  isOk: isOkGroups[j],
-  labels: labelGroups[j],
-  font: PdfFont.helvetica(pdf.document),
-  maxHeight: chartHeight,
-  maxPercent: maxPercent,
-  toleranz: toleranz,
-  isFirstChart: i == 0 && j == 0,
-  ));
-  }
-
-  pdf.addPage(
-  pw.Page(
-  pageFormat: PdfPageFormat.a4,
-  build: (context) => pw.Column(
-  mainAxisAlignment: pw.MainAxisAlignment.start,
-  children: [
-  pw.Column(children: chartsThisPage),
-  pw.Spacer(),
-  pw.Container(
-  alignment: pw.Alignment.centerRight,
-  padding: const pw.EdgeInsets.only(right: 20, bottom: 10),
-  child: pw.Text(
-  '${t.text('home3')}: $projectVar    ${t.text('pdf6')}: $dateString',
-  style: pw.TextStyle(font: myFontregular, fontSize: 10, color: PdfColors.grey600),
-  ),
-  ),
-  ],
-  ),
-  ),
-  );
-  }
-
-  final pdfBytes = await pdf.save();
-  if (Platform.isAndroid) {
-  await _saveToAndroidDownloads(bytes: pdfBytes, fileName: fileName);
-  return 'Downloads/TorqueDoc/$fileName';
-  } else {
-  await iosFile!.writeAsBytes(pdfBytes);
-  return iosFile.path;
-  }
-  }
-
-  /// CSV-Erstellung
   static Future<String?> exportCsvInBackground({
-  required Translations t,
-  required List<Map<String, dynamic>> data,
-  required String projectVar,
-  required String userName,
-  required String serialPump,
-  required String serialHose,
-  required String serialTool,
-  required String tool,
-  required String toleranz,
-  required String Einheit,
-  required String EinheitD,
+    required Translations t,
+    required List<Map<String, dynamic>> data,
+    required String projectVar,
+    required String userName,
+    required String serialPump,
+    required String serialHose,
+    required String serialTool,
+    required String tool,
+    required String toleranz,
+    required String Einheit,
+    required String EinheitD,
   }) async {
-  if (data.isEmpty) return null;
+    if (data.isEmpty) return null;
 
-  final now = DateTime.now();
-  final dateString =
-  "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-  final safeProjectVar = projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), "_");
-  final fileName = "${safeProjectVar}_$dateString.csv";
+    final now = DateTime.now();
 
-  File? iosFile;
-  if (!Platform.isAndroid) {
-  final baseDir = await getApplicationDocumentsDirectory();
-  final dir = Directory('${baseDir.path}/TorqueDocData');
-  if (!await dir.exists()) await dir.create(recursive: true);
+    final dateString =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-  iosFile = File('${dir.path}/$fileName');
-  if (await iosFile.exists()) await iosFile.delete();
+    final safeProjectVar =
+    projectVar.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+
+    final fileName = '${safeProjectVar}_$dateString.csv';
+
+    File? iosFile;
+
+    if (!Platform.isAndroid) {
+      final baseDir = await getApplicationDocumentsDirectory();
+      final dir = Directory('${baseDir.path}/TorqueDocData');
+
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+
+      iosFile = File('${dir.path}/$fileName');
+
+      if (await iosFile.exists()) {
+        await iosFile.delete();
+      }
+    }
+
+    final List<List<String>> csvData = [];
+
+    // Projektdaten
+    if (userName.isNotEmpty) {
+      csvData.add([t.text('home1'), userName]);
+    }
+
+    if (projectVar.isNotEmpty) {
+      csvData.add([t.text('home3'), projectVar]);
+    }
+
+    if (serialPump.isNotEmpty) {
+      csvData.add([t.text('home9'), serialPump]);
+    }
+
+    if (serialHose.isNotEmpty) {
+      csvData.add([t.text('home11'), serialHose]);
+    }
+
+    if (serialTool.isNotEmpty) {
+      csvData.add([t.text('home13'), serialTool]);
+    }
+
+    if (tool.isNotEmpty) {
+      csvData.add([t.text('home15'), tool]);
+    }
+
+    if (toleranz.isNotEmpty) {
+      csvData.add([t.text('home7'), '$toleranz %']);
+    }
+
+    csvData.add([t.text('pdf6'), dateString]);
+    csvData.add([]);
+
+    // Tabellenkopf
+    final headers = [
+      t.text('pdf1'),
+      t.textArgs('pdf2', {'Value': Einheit}),
+      t.textArgs('pdf3', {'Value': Einheit}),
+      t.textArgs('pdf4', {'Value': EinheitD}),
+      t.textArgs('pdf5', {'Value': EinheitD}),
+      'IO',
+    ];
+
+    csvData.add(headers);
+
+    // Messwerte
+    for (final row in data) {
+      csvData.add([
+        '${row['Nr.'] ?? ''}',
+        '${row['Solldruck'] ?? ''}',
+        '${row['Nenndruck'] ?? ''}',
+        '${row['Solldrehmoment'] ?? ''}',
+        '${row['Nenndrehmoment'] ?? ''}',
+        '${row['IO'] ?? ''}',
+      ]);
+    }
+
+    final csvString = const ListToCsvConverter().convert(csvData);
+
+    if (Platform.isAndroid) {
+      await _saveToAndroidDownloads(
+        bytes: Uint8List.fromList(utf8.encode(csvString)),
+        fileName: fileName,
+      );
+
+      return 'Downloads/TorqueDoc/$fileName';
+    } else {
+      await iosFile!.writeAsString(csvString);
+      return iosFile.path;
+    }
   }
-
-  List<List<String>> csvData = [];
-
-  // Projektdaten Header
-  if (userName.isNotEmpty) csvData.add([t.text('home1'), userName]);
-  if (projectVar.isNotEmpty) csvData.add([t.text('home3'), projectVar]);
-  if (serialPump.isNotEmpty) csvData.add([t.text('home9'), serialPump]);
-  if (serialHose.isNotEmpty) csvData.add([t.text('home11'), serialHose]);
-  if (serialTool.isNotEmpty) csvData.add([t.text('home13'), serialTool]);
-  if (tool.isNotEmpty) csvData.add([t.text('home15'), tool]);
-  if (toleranz.isNotEmpty) csvData.add([t.text('home7'), '$toleranz %']);
-  csvData.add([t.text('pdf6'), dateString]);
-  csvData.add([]);
-
-  // Tabellenkopf
-  final headers = [
-  t.text('pdf1'),
-  t.textArgs('pdf2', {'Value': Einheit}),
-  t.textArgs('pdf3', {'Value': Einheit}),
-  t.textArgs('pdf4', {'Value': EinheitD}),
-  t.textArgs('pdf5', {'Value': EinheitD}),
-  'IO',
-  ];
-  csvData.add(headers);
-
-  // Datenzeilen
-  for (var row in data) {
-  csvData.add([
-  "${row['Nr.'] ?? ''}",
-  "${row['Solldruck'] ?? ''}",
-  "${row['Nenndruck'] ?? ''}",
-  "${row['Solldrehmoment'] ?? ''}",
-  "${row['Nenndrehmoment'] ?? ''}",
-  row['IO'] ?? '',
-  ]);
-  }
-
-  final csvString = const ListToCsvConverter().convert(csvData);
-
-  if (Platform.isAndroid) {
-  await _saveToAndroidDownloads(
-  bytes: Uint8List.fromList(utf8.encode(csvString)),
-  fileName: fileName,
-  );
-  return 'Downloads/TorqueDoc/$fileName';
-  } else {
-  await iosFile!.writeAsString(csvString);
-  return iosFile.path;
-  }
-  }
-  }
-
+}
