@@ -42,7 +42,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   bool isConnected = false;
   bool isScanning = false;
 
-  late final t = Provider.of<Translations>(context, listen: false);
+  late final t = Provider.of<Translations>(context);
 
   // ---------------------------------------------------------
   // BLE-BERECHTIGUNGEN

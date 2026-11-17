@@ -18,11 +18,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.stephandahlmann.torquedocalkitronic"//"com.stephandahlmann.torquedoc" // Standard, oder "com.stephandahlmann.torquedocalkitronic" für Alkitronik
+        applicationId = "com.stephandahlmann.torquedoc"//"com.stephandahlmann.torquedoc" // Standard, oder "com.stephandahlmann.torquedocalkitronic" für Alkitronik
         minSdk = 24
-        targetSdk = 35
-        versionCode = 7
-        versionName = "1.0.1"
+        targetSdk = 36
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     compileOptions {

@@ -320,7 +320,7 @@ icon: Icons.gavel_outlined,
 title: t.text('set11'),
 onTap: () {
 _openUrl(
-'https://www.stephandahlmann.com/impressum',//Standard
+'https://stephandahlmann.com/?route=imprint',//Standard
 // 'https://www.alkitronic.com/impressum/', //Alkitronic
 );
 },
@@ -331,7 +331,7 @@ icon: Icons.privacy_tip_outlined,
 title: t.text('set12'),
 onTap: () {
 _openUrl(
-'https://www.stephandahlmann.com/datenschutz', //Standard
+'https://stephandahlmann.com/?route=datasecurity', //Standard
 //'https://www.alkitronic.com/datenschutz/',//Alkitronic
 );
 },

@@ -137,7 +137,7 @@ class _AppTemplateState extends State<AppTemplate> {
               padding: const EdgeInsets.all(16.0),
               child: GestureDetector(
                 onTap: () async {
-                  final Uri url = Uri.parse('https://www.stephandahlmann.com/de/index.php?cid=kontakt'); //Standart
+                  final Uri url = Uri.parse('https://stephandahlmann.com/?route=contact'); //Standart
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                 },
                 child: const Row(
