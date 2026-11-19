@@ -37,14 +37,14 @@
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true/>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>Diese App benötigt Zugriff auf die Fotobibliothek, um Protokolle und PDFs zu speichern.</string>
+    <string>"TorqueDoc needs access to your photo library to save logs and PDF files.</string>
 
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Diese App benötigt Bluetooth, um Geräte zu erkennen und zu verbinden.</string>
+	<string>TorqueDoc needs Bluetooth to discover and connect to diagnostic devices.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>Bluetooth wird benötigt, um Daten mit verbundenen Geräten auszutauschen.</string>
+	<string>TorqueDoc needs Bluetooth to exchange data with connected diagnostic devices.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Standortzugriff wird benötigt, um Bluetooth-Geräte zu erkennen.</string>
+	<string>TorqueDoc needs location access to discover Bluetooth devices.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
